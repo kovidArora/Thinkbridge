@@ -12,3 +12,4 @@ C:\Users\kriti\OneDrive\Desktop\coding\thinkbridge\day 1\hello-cs\obj\Debug\net1
 C:\Users\kriti\OneDrive\Desktop\coding\thinkbridge\day 1\hello-cs\obj\Debug\net10.0\hello-cs.pdb
 C:\Users\kriti\OneDrive\Desktop\coding\thinkbridge\day 1\hello-cs\obj\Debug\net10.0\hello-cs.genruntimeconfig.cache
 C:\Users\kriti\OneDrive\Desktop\coding\thinkbridge\day 1\hello-cs\obj\Debug\net10.0\ref\hello-cs.dll
+C:\Users\kriti\OneDrive\Desktop\coding\thinkbridge\day 1\hello-cs\obj\Debug\net10.0\hello-cs.sourcelink.json
