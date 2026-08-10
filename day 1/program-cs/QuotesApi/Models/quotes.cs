@@ -1,5 +1,5 @@
 namespace QuotesApi.Models;
-
+//gives the shape of the database
 public class Quote
 {
     public int Id { get; set; }

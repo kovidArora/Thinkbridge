@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesAPI\\QuotesApi.csproj": {}
+    "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\QuotesApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesAPI\\QuotesApi.csproj": {
+    "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\QuotesApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesAPI\\QuotesApi.csproj",
+        "projectUniqueName": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\QuotesApi.csproj",
         "projectName": "QuotesApi",
-        "projectPath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesAPI\\QuotesApi.csproj",
+        "projectPath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\QuotesApi.csproj",
         "packagesPath": "C:\\Users\\kriti\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesAPI\\obj\\",
+        "outputPath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

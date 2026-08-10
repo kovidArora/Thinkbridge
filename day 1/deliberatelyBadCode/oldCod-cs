@@ -1,0 +1,655 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace BadOrderApi.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class OrderController : ControllerBase
+    {
+        private readonly AppDbContext _db;
+
+        public OrderController(AppDbContext db)
+        {
+            _db = db;
+        }
+
+        [HttpPost]
+        public async Task<object> PostOrder(OrderRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return new { success = false, message = "Request cannot be null" };
+                }
+
+                if (request.CustomerId <= 0)
+                {
+                    return new { success = false, message = "Invalid customer" };
+                }
+
+                if (request.Items == null)
+                {
+                    return new { success = false, message = "Items are required" };
+                }
+
+                if (request.Items.Count == 0)
+                {
+                    return new { success = false, message = "Order must contain items" };
+                }
+
+                var customer = _db.Customers
+                    .FirstOrDefault(x => x.Id == request.CustomerId);
+
+                if (customer == null)
+                {
+                    return new { success = false, message = "Customer not found" };
+                }
+
+                if (!customer.IsActive)
+                {
+                    return new { success = false, message = "Customer is inactive" };
+                }
+
+                decimal subtotal = 0;
+                decimal tax = 0;
+                decimal discount = 0;
+                decimal shipping = 0;
+
+                var order = new Order();
+
+                order.CustomerId = request.CustomerId;
+                order.CreatedAt = DateTime.UtcNow;
+                order.Status = "Pending";
+
+                foreach (var item in request.Items)
+                {
+                    if (item == null)
+                    {
+                        return new { success = false, message = "Order contains invalid item" };
+                    }
+
+                    if (item.ProductId <= 0)
+                    {
+                        return new { success = false, message = "Invalid product ID" };
+                    }
+
+                    if (item.Quantity <= 0)
+                    {
+                        return new { success = false, message = "Quantity must be greater than zero" };
+                    }
+
+                    var product = _db.Products
+                        .FirstOrDefault(p => p.Id == item.ProductId);
+
+                    if (product == null)
+                    {
+                        return new
+                        {
+                            success = false,
+                            message = "Product " + item.ProductId + " was not found"
+                        };
+                    }
+
+                    if (!product.IsActive)
+                    {
+                        return new
+                        {
+                            success = false,
+                            message = "Product " + product.Name + " is inactive"
+                        };
+                    }
+
+                    if (product.Stock < item.Quantity)
+                    {
+                        return new
+                        {
+                            success = false,
+                            message = "Not enough stock for " + product.Name
+                        };
+                    }
+
+                    var orderItem = new OrderItem();
+
+                    orderItem.ProductId = product.Id;
+                    orderItem.Quantity = item.Quantity;
+                    orderItem.UnitPrice = product.Price;
+
+                    var lineTotal = product.Price * item.Quantity;
+
+                    subtotal += lineTotal;
+
+                    product.Stock -= item.Quantity;
+
+                    order.Items.Add(orderItem);
+                }
+
+                if (subtotal > 10000)
+                {
+                    discount = subtotal * 0.10m;
+                }
+                else if (subtotal > 5000)
+                {
+                    discount = subtotal * 0.05m;
+                }
+
+                if (customer.IsVip)
+                {
+                    discount += subtotal * 0.05m;
+                }
+
+                var discountedSubtotal = subtotal - discount;
+
+                if (discountedSubtotal < 0)
+                {
+                    discountedSubtotal = 0;
+                }
+
+                tax = discountedSubtotal * 0.18m;
+
+                if (subtotal >= 5000)
+                {
+                    shipping = 0;
+                }
+                else
+                {
+                    shipping = 100;
+                }
+
+                if (request.CouponCode != null)
+                {
+                    var coupon = _db.Coupons
+                        .FirstOrDefault(c =>
+                            c.Code == request.CouponCode &&
+                            c.IsActive);
+
+                    if (coupon == null)
+                    {
+                        return new
+                        {
+                            success = false,
+                            message = "Invalid coupon"
+                        };
+                    }
+
+                    if (coupon.ExpiresAt < DateTime.UtcNow)
+                    {
+                        return new
+                        {
+                            success = false,
+                            message = "Coupon has expired"
+                        };
+                    }
+
+                    if (coupon.MinimumOrderAmount > subtotal)
+                    {
+                        return new
+                        {
+                            success = false,
+                            message = "Coupon minimum order amount not met"
+                        };
+                    }
+
+                    if (coupon.Type == "Percentage")
+                    {
+                        discount += subtotal * coupon.Value / 100;
+                    }
+                    else
+                    {
+                        discount += coupon.Value;
+                    }
+                }
+
+                if (discount > subtotal)
+                {
+                    discount = subtotal;
+                }
+
+                discountedSubtotal = subtotal - discount;
+
+                tax = discountedSubtotal * 0.18m;
+
+                var total = discountedSubtotal + tax + shipping;
+
+                if (total < 0)
+                {
+                    return new
+                    {
+                        success = false,
+                        message = "Invalid total"
+                    };
+                }
+
+                order.Subtotal = subtotal;
+                order.Discount = discount;
+                order.Tax = tax;
+                order.Shipping = shipping;
+                order.Total = total;
+
+                if (request.PaymentMethod == "CARD")
+                {
+                    try
+                    {
+                        if (string.IsNullOrEmpty(request.CardNumber))
+                        {
+                            return new
+                            {
+                                success = false,
+                                message = "Card number required"
+                            };
+                        }
+
+                        if (request.CardNumber.Length < 12)
+                        {
+                            return new
+                            {
+                                success = false,
+                                message = "Invalid card number"
+                            };
+                        }
+
+                        // Pretend to call a payment service.
+                        var paymentApproved = true;
+
+                        if (!paymentApproved)
+                        {
+                            return new
+                            {
+                                success = false,
+                                message = "Payment declined"
+                            };
+                        }
+
+                        order.PaymentStatus = "Paid";
+                    }
+                    catch
+                    {
+                        // Swallowing exceptions because apparently nothing
+                        // bad can ever happen.
+                    }
+                }
+                else if (request.PaymentMethod == "COD")
+                {
+                    order.PaymentStatus = "Pending";
+                }
+                else
+                {
+                    return new
+                    {
+                        success = false,
+                        message = "Unsupported payment method"
+                    };
+                }
+
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(request.CouponCode))
+                    {
+                        var coupon = _db.Coupons
+                            .FirstOrDefault(c => c.Code == request.CouponCode);
+
+                        if (coupon != null)
+                        {
+                            coupon.UsageCount++;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore coupon tracking errors.
+                }
+
+                try
+                {
+                    order.Notes = request.Notes?.Trim();
+
+                    if (order.Notes != null &&
+                        order.Notes.Length > 500)
+                    {
+                        order.Notes = order.Notes.Substring(0, 500);
+                    }
+                }
+                catch
+                {
+                    // Nothing to see here.
+                }
+
+                try
+                {
+                    if (request.Items.Count > 0)
+                    {
+                        order.Reference =
+                            "ORD-" +
+                            DateTime.UtcNow.ToString("yyyyMMdd") +
+                            "-" +
+                            (_db.Orders.Count() + 1);
+                    }
+                }
+                catch
+                {
+                    // Logging would be too much effort.
+                }
+
+                if (request.Items.Count > 10)
+                {
+                    order.Status = "RequiresReview";
+                }
+
+                if (customer.IsVip && total > 20000)
+                {
+                    order.Status = "RequiresReview";
+                }
+
+                if (request.Priority)
+                {
+                    order.Priority = "HIGH";
+                }
+                else
+                {
+                    order.Priority = "NORMAL";
+                }
+
+                if (request.DeliveryAddressId.HasValue)
+                {
+                    var address = _db.Addresses
+                        .FirstOrDefault(a =>
+                            a.Id == request.DeliveryAddressId.Value);
+
+                    if (address == null)
+                    {
+                        return new
+                        {
+                            success = false,
+                            message = "Delivery address not found"
+                        };
+                    }
+
+                    if (address.CustomerId != customer.Id)
+                    {
+                        return new
+                        {
+                            success = false,
+                            message = "Address does not belong to customer"
+                        };
+                    }
+
+                    order.DeliveryAddressId = address.Id;
+                }
+
+                if (request.Items.Count > 1)
+                {
+                    var firstItem = request.Items[0];
+
+                    if (firstItem.Quantity > 100)
+                    {
+                        order.Status = "RequiresReview";
+                    }
+                }
+
+                if (request.Items.Count >= 3)
+                {
+                    var lastItem = request.Items[request.Items.Count];
+
+                    // BUG:
+                    // Count is one past the final valid index.
+                    // This throws IndexOutOfRangeException.
+                    var product = _db.Products
+                        .FirstOrDefault(p => p.Id == lastItem.ProductId);
+
+                    if (product != null)
+                    {
+                        order.Notes +=
+                            " Multiple-item order containing " +
+                            product.Name;
+                    }
+                }
+
+                if (customer.Name.Length > 0)
+                {
+                    order.CustomerName = customer.Name;
+                }
+
+                if (request.Referrer != null)
+                {
+                    order.Referrer = request.Referrer.Trim();
+                }
+
+                if (request.Metadata != null)
+                {
+                    order.Metadata = string.Join(
+                        ";",
+                        request.Metadata.Select(x =>
+                            x.Key + "=" + x.Value));
+                }
+
+                _db.Orders.Add(order);
+
+                // BUG:
+                // This is a synchronous EF call inside an async action.
+                _db.SaveChanges();
+
+                var savedOrder = _db.Orders
+                    .Include(x => x.Items)
+                    .FirstOrDefault(x => x.Id == order.Id);
+
+                if (savedOrder == null)
+                {
+                    return new
+                    {
+                        success = false,
+                        message = "Order could not be saved"
+                    };
+                }
+
+                if (savedOrder.PaymentStatus == "Paid")
+                {
+                    try
+                    {
+                        // Pretend email notification.
+                        var email = customer.Email;
+
+                        if (email.Length > 0)
+                        {
+                            Console.WriteLine(
+                                "Sending confirmation email to " + email);
+                        }
+                    }
+                    catch
+                    {
+                        // Email failure silently ignored.
+                    }
+                }
+
+                if (savedOrder.Status == "RequiresReview")
+                {
+                    try
+                    {
+                        Console.WriteLine(
+                            "Sending order for manual review: " +
+                            savedOrder.Id);
+                    }
+                    catch
+                    {
+                        // Manual review notification failed.
+                    }
+                }
+
+                var responseItems = new List<object>();
+
+                foreach (var savedItem in savedOrder.Items)
+                {
+                    var product = _db.Products
+                        .FirstOrDefault(p =>
+                            p.Id == savedItem.ProductId);
+
+                    responseItems.Add(new
+                    {
+                        productId = savedItem.ProductId,
+                        productName = product.Name,
+                        quantity = savedItem.Quantity,
+                        unitPrice = savedItem.UnitPrice,
+                        total = savedItem.Quantity * savedItem.UnitPrice
+                    });
+                }
+
+                return new
+                {
+                    success = true,
+                    message = "Order created successfully",
+                    order = new
+                    {
+                        id = savedOrder.Id,
+                        reference = savedOrder.Reference,
+                        customerId = savedOrder.CustomerId,
+                        customerName = customer.Name,
+                        status = savedOrder.Status,
+                        paymentStatus = savedOrder.PaymentStatus,
+                        subtotal = savedOrder.Subtotal,
+                        discount = savedOrder.Discount,
+                        tax = savedOrder.Tax,
+                        shipping = savedOrder.Shipping,
+                        total = savedOrder.Total,
+                        createdAt = savedOrder.CreatedAt,
+                        priority = savedOrder.Priority,
+                        items = responseItems
+                    }
+                };
+            }
+            catch (NullReferenceException)
+            {
+                return new
+                {
+                    success = false,
+                    message = "Something was null"
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+
+                return new
+                {
+                    success = false,
+                    message = "An unexpected error occurred"
+                };
+            }
+        }
+    }
+
+    public class OrderRequest
+    {
+        public int CustomerId { get; set; }
+
+        public List<OrderRequestItem> Items { get; set; }
+
+        public string CouponCode { get; set; }
+
+        public string PaymentMethod { get; set; }
+
+        public string CardNumber { get; set; }
+
+        public string Notes { get; set; }
+
+        public bool Priority { get; set; }
+
+        public int? DeliveryAddressId { get; set; }
+
+        public string Referrer { get; set; }
+
+        public Dictionary<string, string> Metadata { get; set; }
+    }
+
+    public class OrderRequestItem
+    {
+        public int ProductId { get; set; }
+
+        public int Quantity { get; set; }
+    }
+
+    // Minimal fake entities/context so the intentionally bad controller
+    // has enough surrounding code to understand what it is doing.
+
+    public class Customer
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public bool IsActive { get; set; }
+        public bool IsVip { get; set; }
+    }
+
+    public class Product
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public decimal Price { get; set; }
+        public int Stock { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class Coupon
+    {
+        public int Id { get; set; }
+        public string Code { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime ExpiresAt { get; set; }
+        public decimal MinimumOrderAmount { get; set; }
+        public string Type { get; set; }
+        public decimal Value { get; set; }
+        public int UsageCount { get; set; }
+    }
+
+    public class Address
+    {
+        public int Id { get; set; }
+        public int CustomerId { get; set; }
+    }
+
+    public class Order
+    {
+        public int Id { get; set; }
+        public int CustomerId { get; set; }
+        public string CustomerName { get; set; }
+        public string Reference { get; set; }
+        public string Status { get; set; }
+        public string PaymentStatus { get; set; }
+        public decimal Subtotal { get; set; }
+        public decimal Discount { get; set; }
+        public decimal Tax { get; set; }
+        public decimal Shipping { get; set; }
+        public decimal Total { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string Notes { get; set; }
+        public string Priority { get; set; }
+        public int? DeliveryAddressId { get; set; }
+        public string Referrer { get; set; }
+        public string Metadata { get; set; }
+
+        public List<OrderItem> Items { get; set; } =
+            new List<OrderItem>();
+    }
+
+    public class OrderItem
+    {
+        public int Id { get; set; }
+        public int OrderId { get; set; }
+        public int ProductId { get; set; }
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+    }
+
+    public class AppDbContext : DbContext
+    {
+        public DbSet<Customer> Customers { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<Coupon> Coupons { get; set; }
+        public DbSet<Address> Addresses { get; set; }
+        public DbSet<Order> Orders { get; set; }
+    }
+}
+```
