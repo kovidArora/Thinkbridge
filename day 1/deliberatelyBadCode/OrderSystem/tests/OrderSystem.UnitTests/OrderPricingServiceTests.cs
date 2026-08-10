@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using OrderSystem.Application.Dtos;
 using OrderSystem.Application.Pricing;
 using OrderSystem.Domain.Entities;
 using OrderSystem.Domain.Enums;
@@ -43,5 +45,23 @@ public class OrderPricingServiceTests
         Assert.Equal(100m, pricing.Discount); // capped at subtotal, never negative
         Assert.Equal(0m, pricing.Tax);        // nothing left to tax
         Assert.True(pricing.Total >= 0m);
+    }
+
+    [Fact]
+    public void Validate_RejectsNegativeQuantity()
+    {
+        var item = new OrderRequestItem
+        {
+            ProductId = 1,
+            Quantity = -1
+        };
+
+        var validationContext = new ValidationContext(item);
+        var validationResults = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(item, validationContext, validationResults, validateAllProperties: true);
+
+        Assert.False(isValid);
+        Assert.Contains(validationResults, result => result.ErrorMessage == "Quantity must be greater than zero.");
     }
 }
