@@ -15,6 +15,7 @@ public static class InfrastructureExtensions
                 configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<IQuoteRepository, QuoteRepository>();
+        services.AddScoped<ICollectionRepository, CollectionRepository>();
 
         return services;
     }

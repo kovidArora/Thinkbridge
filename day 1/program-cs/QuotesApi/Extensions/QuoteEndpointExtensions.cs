@@ -102,9 +102,97 @@ public static class QuoteEndpointExtensions
                 ? Results.NoContent()
                 : Results.NotFound();
         });
+
+
+        // =========================
+        // Collection endpoints
+        // =========================
+
+        app.MapPost("/api/collections", async (
+            CreateCollectionRequest request,
+            ICollectionRepository repository) =>
+        {
+            try
+            {
+                var collection = new Collection(
+                    request.Name,
+                    request.OwnerId);
+
+                await repository.Add(collection);
+
+                return Results.Created(
+                    $"/api/collections/{collection.Id}",
+                    collection);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(ex.Message);
+            }
+        });
+
+        app.MapPost("/api/collections/{id:int}/items/{quoteId:int}", async (
+            int id,
+            int quoteId,
+            ICollectionRepository repository) =>
+        {
+            var collection = await repository.GetById(id);
+
+            if (collection is null)
+            {
+                return Results.NotFound();
+            }
+
+            try
+            {
+                collection.AddItem(quoteId);
+            }
+           catch (InvalidOperationException ex)
+{
+    return Results.Problem(
+        statusCode: 400,
+        title: "Collection invariant violated",
+        detail: ex.Message);
+}
+            await repository.Update(collection);
+
+            return Results.Ok(collection);
+        });
+
+        app.MapDelete("/api/collections/{id:int}/items/{quoteId:int}", async (
+            int id,
+            int quoteId,
+            ICollectionRepository repository) =>
+        {
+            var collection = await repository.GetById(id);
+
+            if (collection is null)
+            {
+                return Results.NotFound();
+            }
+
+            try
+            {
+                collection.RemoveItem(quoteId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Problem(
+                    statusCode: 400,
+                    title: "Collection invariant violated",
+                    detail: ex.Message);
+            }
+
+            await repository.Update(collection);
+
+            return Results.Ok(collection);
+        });
     }
 }
 
 public record CreateQuoteRequest(
     string Author,
     string Text);
+
+public record CreateCollectionRequest(
+    string Name,
+    int OwnerId);
