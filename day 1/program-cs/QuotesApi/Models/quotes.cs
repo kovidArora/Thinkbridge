@@ -1,5 +1,5 @@
 namespace QuotesApi.Models;
-//gives the shape of the database
+
 public class Quote
 {
     public int Id { get; set; }
@@ -7,4 +7,6 @@ public class Quote
     public string Author { get; set; } = string.Empty;
 
     public string Text { get; set; } = string.Empty;
+
+    public DateTimeOffset PublishedAt { get; set; }
 }

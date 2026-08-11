@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using QuotesApi.Data;
 using QuotesApi.Models;
-
+using QuotesApi.Repositories;
 namespace QuotesApi.Repositories;
 
 public class QuoteRepository : IQuoteRepository
@@ -9,12 +9,15 @@ public class QuoteRepository : IQuoteRepository
     private readonly QuotesDbContext _db;
     private readonly ILogger<QuoteRepository> _logger;
 
+    private readonly IClock _clock;
     public QuoteRepository(
         QuotesDbContext db,
+        IClock clock,
         ILogger<QuoteRepository> logger)
     {
     _db = db;
     _logger = logger;
+    _clock = clock;
     }
 
     public async Task<List<Quote>> GetQuotesAsync(
@@ -39,10 +42,9 @@ public class QuoteRepository : IQuoteRepository
             .FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
     }
 
-public async Task<Quote> AddAsync(
-    Quote quote,
-    CancellationToken cancellationToken)
-{
+public async Task<Quote> AddAsync( Quote quote, CancellationToken cancellationToken) {
+    quote.PublishedAt = _clock.UtcNow;
+    
     _db.Quotes.Add(quote);
     await _db.SaveChangesAsync(cancellationToken);
 
