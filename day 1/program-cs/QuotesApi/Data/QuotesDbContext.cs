@@ -14,7 +14,7 @@ public class QuotesDbContext : DbContext
 
     public DbSet<Quote> Quotes { get; set; }
     public DbSet<Collection> Collections { get; set; }
-
+    public DbSet<User> Users { get; set; }
    protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     modelBuilder.Entity<Collection>(entity =>

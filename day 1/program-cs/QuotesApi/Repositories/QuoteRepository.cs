@@ -20,28 +20,54 @@ public class QuoteRepository : IQuoteRepository
     _clock = clock;
     }
 
-    public async Task<List<Quote>> GetQuotesAsync(
-        int page,
-        int size,
-        CancellationToken cancellationToken)
+public async Task<List<Quote>> GetQuotesAsync(
+    int page,
+    int size,
+    CancellationToken cancellationToken)
+{
+    return await _db.Quotes
+        .AsNoTracking()
+        .Where(q => !q.IsDeleted)
+        .OrderBy(q => q.Id)
+        .Skip((page - 1) * size)
+        .Take(size)
+        .ToListAsync(cancellationToken);
+}
+
+public async Task<Quote?> GetByIdAsync(
+    int id,
+    CancellationToken cancellationToken)
+{
+    return await _db.Quotes
+        .AsNoTracking()
+        .FirstOrDefaultAsync(q => q.Id == id && !q.IsDeleted, cancellationToken);
+}
+
+public async Task<bool> DeleteAsync(
+    int id,
+    CancellationToken cancellationToken)
+{
+    var quote = await _db.Quotes
+        .FirstOrDefaultAsync(q => q.Id == id && !q.IsDeleted, cancellationToken);
+
+    if (quote is null)
     {
-        return await _db.Quotes
-            .AsNoTracking()
-            .OrderBy(q => q.Id)
-            .Skip((page - 1) * size)
-            .Take(size)
-            .ToListAsync(cancellationToken);
+        _logger.LogWarning(
+            "Quote {QuoteId} was not found for deletion",
+            id);
+
+        return false;
     }
 
-    public async Task<Quote?> GetByIdAsync(
-        int id,
-        CancellationToken cancellationToken)
-    {
-        return await _db.Quotes
-            .AsNoTracking()
-            .FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
-    }
+    quote.Delete();
+    await _db.SaveChangesAsync(cancellationToken);
 
+    _logger.LogInformation(
+        "Deleted quote {QuoteId}",
+        id);
+
+    return true;
+}
 public async Task<Quote> AddAsync( Quote quote, CancellationToken cancellationToken) {
     quote.PublishedAt = _clock.UtcNow;
     
@@ -56,29 +82,5 @@ public async Task<Quote> AddAsync( Quote quote, CancellationToken cancellationTo
     return quote;
 }
 
-    public async Task<bool> DeleteAsync(
-    int id,
-    CancellationToken cancellationToken)
-{
-    var quote = await _db.Quotes
-        .FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
 
-    if (quote is null)
-    {
-        _logger.LogWarning(
-            "Quote {QuoteId} was not found for deletion",
-            id);
-
-        return false;
-    }
-
-    _db.Quotes.Remove(quote);
-    await _db.SaveChangesAsync(cancellationToken);
-
-    _logger.LogInformation(
-        "Deleted quote {QuoteId}",
-        id);
-
-    return true;
-}
 }

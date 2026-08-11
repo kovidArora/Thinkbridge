@@ -28,14 +28,14 @@ public class ClockTests
 
         var repository = new QuoteRepository(db, clock, logger);
 
-        var quote = new Quote
-        {
-            Author = "Albert Einstein",
-            Text = "Life is like riding a bicycle."
-        };
+        var (quote, error) = Quote.Create(
+            "Albert Einstein",
+            "Life is like riding a bicycle.");
+
+        Assert.NotNull(quote);
 
         var result = await repository.AddAsync(
-            quote,
+            quote!,
             CancellationToken.None);
 
         Assert.Equal(fixedTime, result.PublishedAt);

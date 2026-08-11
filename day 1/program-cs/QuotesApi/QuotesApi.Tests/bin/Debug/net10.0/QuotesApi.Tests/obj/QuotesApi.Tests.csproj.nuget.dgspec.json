@@ -1,7 +1,7 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\QuotesApi.Tests\\QuotesApi.Tests.csproj": {}
+    "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\quotesapi.tests\\QuotesApi.Tests.csproj": {}
   },
   "projects": {
     "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\QuotesApi.csproj": {
@@ -502,14 +502,14 @@
         }
       }
     },
-    "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\QuotesApi.Tests\\QuotesApi.Tests.csproj": {
+    "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\quotesapi.tests\\QuotesApi.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\QuotesApi.Tests\\QuotesApi.Tests.csproj",
+        "projectUniqueName": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\quotesapi.tests\\QuotesApi.Tests.csproj",
         "projectName": "QuotesApi.Tests",
-        "projectPath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\QuotesApi.Tests\\QuotesApi.Tests.csproj",
+        "projectPath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\quotesapi.tests\\QuotesApi.Tests.csproj",
         "packagesPath": "C:\\Users\\kriti\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\QuotesApi.Tests\\obj\\",
+        "outputPath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\quotesapi.tests\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
