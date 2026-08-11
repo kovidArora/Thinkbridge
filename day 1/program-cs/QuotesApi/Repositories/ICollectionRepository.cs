@@ -4,8 +4,8 @@ namespace QuotesApi.Repositories;
 
 public interface ICollectionRepository
 {
-    Task<Collection?> GetById(int id);
-    Task Add(Collection collection);
-    Task Update(Collection collection);
-    Task Delete(Collection collection);
+Task<Collection?> GetById(int id, CancellationToken cancellationToken);
+Task Add(Collection collection, CancellationToken cancellationToken);
+Task Update(Collection collection, CancellationToken cancellationToken);
+Task Delete(Collection collection, CancellationToken cancellationToken);
 }

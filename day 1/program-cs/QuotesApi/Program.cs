@@ -21,3 +21,4 @@ using (var scope = app.Services.CreateScope())
 app.MapQuoteEndpoints();
 
 app.Run();
+public partial class Program { }
