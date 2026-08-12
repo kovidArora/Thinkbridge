@@ -14,6 +14,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.11" />
 
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
   </ItemGroup>
@@ -23,6 +24,8 @@
     <None Remove="QuotesApi.Tests/**/*.cs" />
     <Compile Remove="QuotesApi.Tests.Integration/**/*.cs" />
     <None Remove="QuotesApi.Tests.Integration/**/*.cs" />
+    <Compile Remove="Quotes.Tests.Unit/**/*.cs" />
+    <None Remove="Quotes.Tests.Unit/**/*.cs" />
   </ItemGroup>
 
 </Project>
