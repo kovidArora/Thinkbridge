@@ -1,6 +1,0 @@
-
-Claude was useful in identifying the order-review logic as a good candidate for the Strategy Pattern. The main problem was that review rules were scattered across a large service method, so adding another rule would require modifying unrelated code. Claude correctly recognized that each review rule could be isolated and evaluated independently, which makes the intent of the review logic easier to understand.
-
-I would have caught a bug by reading the diff if Claude changed the existing review behavior while extracting the strategies. In particular, the original code had a quantity rule that only examined `Items[0]`. A refactor could easily preserve that mistake or accidentally change which items are considered. I would catch this by comparing the old conditions against each strategy and running a test where the matching item is not the first item. I would also check that the service still produces the same result when no review rules match.
-
-Copilot saved time when writing the validation tests. Once I provided comments describing cases such as negative quantities, it generated the test structure, setup, and assertions quickly. However, its suggestions still needed review because generated tests can make assumptions about the existing model or use the wrong property/value for a scenario. I would not accept a generated test just because it passes.
