@@ -21,24 +21,35 @@ const string InternalScheme = "Internal";
 const string EntraScheme = "Entra";
 
 builder.Services
+
     .AddAuthentication(options =>
     {
         options.DefaultScheme = "smart";
         options.DefaultChallengeScheme = "smart";
     })
     .AddJwtBearer(InternalScheme, options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(
+                builder.Configuration["Jwt:Key"]!)),
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
         {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(
-                    builder.Configuration["Jwt:Key"]!)),
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = true
-        };
-    })
+            Console.WriteLine("=== INTERNAL AUTH FAILED ===");
+            Console.WriteLine(context.Exception.ToString());
+            return Task.CompletedTask;
+        }
+    };
+})
     .AddJwtBearer(EntraScheme, options =>
 {
     var tenantId = builder.Configuration["Entra:TenantId"];
