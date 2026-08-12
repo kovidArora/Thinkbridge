@@ -1,7 +1,7 @@
 name: .NET Tests
 on:
   push:
-    branches: [ "main", "policy-based-auth", "policy-based-authz" ]
+    branches: [ "main", "policy-based-auth", "policy-based-authz", "unit-tests" ]
   pull_request:
     branches: [ "main" ]
 defaults:
