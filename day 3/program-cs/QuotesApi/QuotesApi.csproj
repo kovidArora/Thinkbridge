@@ -26,6 +26,8 @@
     <None Remove="QuotesApi.Tests.Integration/**/*.cs" />
     <Compile Remove="Quotes.Tests.Unit/**/*.cs" />
     <None Remove="Quotes.Tests.Unit/**/*.cs" />
+    <Compile Remove="Quotes.Tests.Integration/**/*.cs" />
+    <None Remove="Quotes.Tests.Integration/**/*.cs" />
   </ItemGroup>
 
 </Project>
