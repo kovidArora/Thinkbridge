@@ -1,7 +1,7 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj": {}
+    "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj": {}
   },
   "projects": {
     "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\QuotesApi\\QuotesApi.csproj": {
@@ -510,14 +510,14 @@
         }
       }
     },
-    "c:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj": {
+    "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj",
+        "projectUniqueName": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj",
         "projectName": "Tests.Domain",
-        "projectPath": "c:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj",
+        "projectPath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj",
         "packagesPath": "C:\\Users\\kriti\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\obj\\",
+        "outputPath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

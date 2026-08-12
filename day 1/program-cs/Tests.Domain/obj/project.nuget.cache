@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "V6KL3yYgouA=",
+  "dgSpecHash": "t7W0kKcpsuY=",
   "success": true,
-  "projectFilePath": "c:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj",
+  "projectFilePath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\kriti\\.nuget\\packages\\bcrypt.net-next\\4.2.0\\bcrypt.net-next.4.2.0.nupkg.sha512",
     "C:\\Users\\kriti\\.nuget\\packages\\coverlet.collector\\6.0.4\\coverlet.collector.6.0.4.nupkg.sha512",
@@ -79,9 +79,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q",
-      "projectPath": "c:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj",
+      "projectPath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj",
       "warningLevel": 1,
-      "filePath": "c:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj",
+      "filePath": "C:\\Users\\kriti\\OneDrive\\Desktop\\coding\\thinkbridge\\day 1\\program-cs\\Tests.Domain\\Tests.Domain.csproj",
       "libraryId": "SQLitePCLRaw.lib.e_sqlite3",
       "targetGraphs": [
         "net10.0"
