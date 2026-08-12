@@ -8,9 +8,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-
+ 
 namespace QuotesApi.Extensions;
-
+ 
 public static class QuoteEndpointExtensions
 {
     public static void MapQuoteEndpoints(this WebApplication app)
@@ -18,7 +18,7 @@ public static class QuoteEndpointExtensions
         // =========================
         // Quote endpoints
         // =========================
-
+ 
         app.MapGet("/api/quotes", async (
             int page,
             int size,
@@ -32,7 +32,7 @@ public static class QuoteEndpointExtensions
                     ["page"] = ["Page must be greater than 0."]
                 });
             }
-
+ 
             if (size < 1)
             {
                 return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -40,15 +40,15 @@ public static class QuoteEndpointExtensions
                     ["size"] = ["Size must be greater than 0."]
                 });
             }
-
+ 
             var quotes = await repository.GetQuotesAsync(
                 page,
                 size,
                 cancellationToken);
-
+ 
             return Results.Ok(quotes);
         });
-
+ 
         app.MapGet("/api/quotes/{id:int}", async (
             int id,
             IQuoteRepository repository,
@@ -57,36 +57,45 @@ public static class QuoteEndpointExtensions
             var quote = await repository.GetByIdAsync(
                 id,
                 cancellationToken);
-
+ 
             return quote is null
                 ? Results.NotFound()
                 : Results.Ok(quote);
         });
-
+ 
         app.MapPost("/api/quotes", async (
             CreateQuoteRequest request,
             IQuoteRepository repository,
+            ClaimsPrincipal user,
             CancellationToken cancellationToken) =>
         {
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+ 
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Results.Unauthorized();
+            }
+ 
             var (quote, error) = Quote.Create(
                 request.Author,
-                request.Text);
-
+                request.Text,
+                userId);
+ 
             if (quote is null)
             {
                 return Results.BadRequest(error);
             }
-
+ 
             var created = await repository.AddAsync(
                 quote,
                 cancellationToken);
-
+ 
             return Results.Created(
                 $"/api/quotes/{created.Id}",
                 created);
         })
-        .RequireAuthorization();
-
+        .RequireAuthorization("can-edit-quotes");
+ 
         app.MapDelete("/api/quotes/{id:int}", async (
             int id,
             IQuoteRepository repository,
@@ -95,17 +104,17 @@ public static class QuoteEndpointExtensions
             var deleted = await repository.DeleteAsync(
                 id,
                 cancellationToken);
-
+ 
             return deleted
                 ? Results.NoContent()
                 : Results.NotFound();
         })
-        .RequireAuthorization();
-
+        .RequireAuthorization("must-own-quote");
+ 
         // =========================
         // Collection endpoints
         // =========================
-
+ 
         app.MapPost("/api/collections", async (
             CreateCollectionRequest request,
             ICollectionRepository repository,
@@ -116,11 +125,11 @@ public static class QuoteEndpointExtensions
                 var collection = new Collection(
                     request.Name,
                     request.OwnerId);
-
+ 
                 await repository.Add(
                     collection,
                     cancellationToken);
-
+ 
                 return Results.Created(
                     $"/api/collections/{collection.Id}",
                     collection);
@@ -130,7 +139,7 @@ public static class QuoteEndpointExtensions
                 return Results.BadRequest(ex.Message);
             }
         });
-
+ 
         app.MapPost(
             "/api/collections/{id:int}/items/{quoteId:int}",
             async (
@@ -142,12 +151,12 @@ public static class QuoteEndpointExtensions
                 var collection = await repository.GetById(
                     id,
                     cancellationToken);
-
+ 
                 if (collection is null)
                 {
                     return Results.NotFound();
                 }
-
+ 
                 try
                 {
                     collection.AddItem(quoteId);
@@ -159,14 +168,14 @@ public static class QuoteEndpointExtensions
                         title: "Collection invariant violated",
                         detail: ex.Message);
                 }
-
+ 
                 await repository.Update(
                     collection,
                     cancellationToken);
-
+ 
                 return Results.Ok(collection);
             });
-
+ 
         app.MapDelete(
             "/api/collections/{id:int}/items/{quoteId:int}",
             async (
@@ -178,12 +187,12 @@ public static class QuoteEndpointExtensions
                 var collection = await repository.GetById(
                     id,
                     cancellationToken);
-
+ 
                 if (collection is null)
                 {
                     return Results.NotFound();
                 }
-
+ 
                 try
                 {
                     collection.RemoveItem(quoteId);
@@ -195,21 +204,20 @@ public static class QuoteEndpointExtensions
                         title: "Collection invariant violated",
                         detail: ex.Message);
                 }
-
+ 
                 await repository.Update(
                     collection,
                     cancellationToken);
-
+ 
                 return Results.Ok(collection);
             });
     }
 }
-
+ 
 public record CreateQuoteRequest(
     string Author,
     string Text);
-
+ 
 public record CreateCollectionRequest(
     string Name,
     int OwnerId);
-

@@ -8,10 +8,14 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using QuotesApi.Models;
+using Microsoft.AspNetCore.Authorization;
+using QuotesApi.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAuthorizationHandler, MustOwnQuoteHandler>();
 
 const string InternalScheme = "Internal";
 const string EntraScheme = "Entra";
@@ -98,7 +102,14 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("can-edit-quotes", policy =>
+        policy.RequireClaim("scope", "quotes.write"));
+
+    options.AddPolicy("must-own-quote", policy =>
+        policy.Requirements.Add(new MustOwnQuoteRequirement()));
+});
 
 var app = builder.Build();
 
@@ -116,15 +127,21 @@ using (var scope = app.Services.CreateScope())
 
     // Temporary test user
     if (!db.Users.Any())
+{
+    db.Users.Add(new User
     {
-        db.Users.Add(new User
-        {
-            Email = "test@example.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!")
-        });
+        Email = "test@example.com",
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!")
+    });
 
-        db.SaveChanges();
-    }
+    db.Users.Add(new User
+    {
+        Email = "second@example.com",
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!")
+    });
+
+    db.SaveChanges();
+}
 }
 
 app.MapQuoteEndpoints();
