@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.11" />
+
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="QuotesApi.Tests/**/*.cs" />
+    <None Remove="QuotesApi.Tests/**/*.cs" />
+    <Compile Remove="QuotesApi.Tests.Integration/**/*.cs" />
+    <None Remove="QuotesApi.Tests.Integration/**/*.cs" />
+    <Compile Remove="Quotes.Tests.Unit/**/*.cs" />
+    <None Remove="Quotes.Tests.Unit/**/*.cs" />
+    <Compile Remove="Quotes.Tests.Integration/**/*.cs" />
+    <None Remove="Quotes.Tests.Integration/**/*.cs" />
+  </ItemGroup>
+
+</Project>
