@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QuotesApi.Data;
+using QuotesApi.Options;
 using QuotesApi.Repositories;
 using QuotesApi.Services;
 
@@ -14,6 +15,8 @@ public static class InfrastructureExtensions
         services.AddDbContext<QuotesDbContext>(options =>
             options.UseSqlite(
                 configuration.GetConnectionString("DefaultConnection")));
+
+        services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
         services.AddScoped<IQuoteRepository, QuoteRepository>();
         services.AddScoped<ICollectionRepository, CollectionRepository>();

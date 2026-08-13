@@ -10,8 +10,16 @@ using System.Text;
 using QuotesApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using QuotesApi.Authorization;
+using QuotesApi.Options;
+using Serilog;
+using Serilog.Context;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, services, configuration) =>
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext());
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
@@ -19,6 +27,8 @@ builder.Services.AddScoped<IAuthorizationHandler, MustOwnQuoteHandler>();
 
 const string InternalScheme = "Internal";
 const string EntraScheme = "Entra";
+
+var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
 
 builder.Services
 
@@ -33,8 +43,7 @@ builder.Services
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(
-                builder.Configuration["Jwt:Key"]!)),
+            Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
         ValidateIssuer = false,
         ValidateAudience = false,
         ValidateLifetime = true
@@ -44,8 +53,14 @@ builder.Services
     {
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine("=== INTERNAL AUTH FAILED ===");
-            Console.WriteLine(context.Exception.ToString());
+            var logger = context.HttpContext.RequestServices
+                .GetRequiredService<ILogger<Program>>();
+
+            logger.LogWarning(
+                context.Exception,
+                "Internal JWT authentication failed for {Path}",
+                context.HttpContext.Request.Path);
+
             return Task.CompletedTask;
         }
     };
@@ -74,8 +89,14 @@ builder.Services
     {
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine("=== ENTRA AUTH FAILED ===");
-            Console.WriteLine(context.Exception.ToString());
+            var logger = context.HttpContext.RequestServices
+                .GetRequiredService<ILogger<Program>>();
+
+            logger.LogWarning(
+                context.Exception,
+                "Entra JWT authentication failed for {Path}",
+                context.HttpContext.Request.Path);
+
             return Task.CompletedTask;
         }
     };
@@ -123,6 +144,16 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+app.Use((httpContext, next) =>
+{
+    using (LogContext.PushProperty("TraceId", httpContext.TraceIdentifier))
+    {
+        return next();
+    }
+});
+
+app.UseSerilogRequestLogging();
 
 app.UseMiddleware<ExceptionMiddleware>();
 

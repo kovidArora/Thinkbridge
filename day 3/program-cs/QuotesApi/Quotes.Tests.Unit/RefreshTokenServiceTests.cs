@@ -1,10 +1,10 @@
 ﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using QuotesApi.Data;
 using QuotesApi.Models;
+using QuotesApi.Options;
 using QuotesApi.Repositories;
 using QuotesApi.Services;
 using Xunit;
@@ -22,16 +22,12 @@ public class RefreshTokenServiceTests
         return new QuotesDbContext(options);
     }
 
-    private static IConfiguration CreateConfiguration()
+    private static TestOptionsSnapshot<JwtOptions> CreateConfiguration()
     {
-        var settings = new Dictionary<string, string?>
+        return new TestOptionsSnapshot<JwtOptions>(new JwtOptions
         {
-            ["Jwt:RefreshTokenExpiryDays"] = "30"
-        };
-
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(settings)
-            .Build();
+            RefreshTokenExpiryDays = 30
+        });
     }
 
     [Fact]

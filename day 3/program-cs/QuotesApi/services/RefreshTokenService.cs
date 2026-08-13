@@ -1,32 +1,33 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using QuotesApi.Data;
 using QuotesApi.Models;
+using QuotesApi.Options;
 using System.Security.Cryptography;
 using System.Text;
 using QuotesApi.Repositories;
 namespace QuotesApi.Services;
- 
+
 public class RefreshTokenService : IRefreshTokenService
 {
     private readonly QuotesDbContext _db;
-    private readonly IConfiguration _configuration;
+    private readonly IOptionsSnapshot<JwtOptions> _options;
     private readonly ILogger<RefreshTokenService> _logger;
     private readonly IClock _clock;
- 
+
     public RefreshTokenService(
         QuotesDbContext db,
-        IConfiguration configuration,
+        IOptionsSnapshot<JwtOptions> options,
         ILogger<RefreshTokenService> logger,
         IClock clock)
     {
         _db = db;
-        _configuration = configuration;
+        _options = options;
         _logger = logger;
         _clock = clock;
     }
- 
-    private int RefreshTokenExpiryDays =>
-        int.TryParse(_configuration["Jwt:RefreshTokenExpiryDays"], out var days) ? days : 30;
+
+    private int RefreshTokenExpiryDays => _options.Value.RefreshTokenExpiryDays;
  
     public async Task<(string RawToken, DateTimeOffset ExpiresAt)> GenerateAsync(
         int userId,

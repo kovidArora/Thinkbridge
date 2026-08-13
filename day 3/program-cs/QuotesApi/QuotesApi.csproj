@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>65648504-85fb-4e45-998b-f7863ffc8f3c</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +18,10 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.11" />
 
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
   </ItemGroup>
 
   <ItemGroup>

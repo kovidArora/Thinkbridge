@@ -75,9 +75,9 @@ public async Task<Quote> AddAsync( Quote quote, CancellationToken cancellationTo
     await _db.SaveChangesAsync(cancellationToken);
 
     _logger.LogInformation(
-        "Created quote {QuoteId} by {Author}",
+        "Created quote {QuoteId} for user {UserId}",
         quote.Id,
-        quote.Author);
+        quote.CreatedByUserId);
 
     return quote;
 }

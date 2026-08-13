@@ -12,7 +12,8 @@ public static class AuthEndpointExtensions
             LoginRequest request,
             QuotesDbContext db,
             IJwtTokenService jwtTokenService,
-            IRefreshTokenService refreshTokenService) =>
+            IRefreshTokenService refreshTokenService,
+            ILogger<Program> logger) =>
         {
             var user = await db.Users
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
@@ -20,11 +21,19 @@ public static class AuthEndpointExtensions
             if (user is null ||
                 !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
+                logger.LogWarning(
+                    "Login failed for email {Email}",
+                    request.Email);
+
                 return Results.Unauthorized();
             }
 
             var (accessToken, expiresIn) = jwtTokenService.GenerateAccessToken(user);
             var (refreshToken, _) = await refreshTokenService.GenerateAsync(user.Id);
+
+            logger.LogInformation(
+                "User {UserId} logged in",
+                user.Id);
 
             return Results.Ok(new
             {
