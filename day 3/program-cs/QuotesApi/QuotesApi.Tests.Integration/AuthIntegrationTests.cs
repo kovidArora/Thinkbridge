@@ -60,6 +60,29 @@ public class AuthIntegrationTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Delete_Quote_CorrectOwner_Returns204()
+    {
+        var client = _factory.CreateClient();
+
+        var token = await LoginAsync(client, "ownerdelete@example.com");
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
+        var createResponse = await client.PostAsJsonAsync("/api/quotes", new
+        {
+            author = "Owner",
+            text = "Owned and deleted by the same user"
+        });
+        createResponse.EnsureSuccessStatusCode();
+
+        var created = await createResponse.Content.ReadFromJsonAsync<QuoteResponse>();
+
+        var deleteResponse = await client.DeleteAsync($"/api/quotes/{created!.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task Post_Quote_AuthenticatedWithCorrectPolicy_Returns201()
     {
         var client = _factory.CreateClient();
