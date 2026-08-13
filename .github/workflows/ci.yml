@@ -1,0 +1,67 @@
+name: CI
+on:
+  push:
+  pull_request:
+    branches: [ "main" ]
+defaults:
+  run:
+    working-directory: day 3/program-cs/QuotesApi
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: >
+          dotnet test --no-build --configuration Release
+          --filter "FullyQualifiedName!~SqlServer"
+          --logger "trx"
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults
+
+      - name: Merge coverage reports
+        if: always()
+        run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+          reportgenerator \
+            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"CoverageReport" \
+            -reporttypes:"Cobertura;HtmlInline"
+
+      - name: Enforce 70% coverage threshold
+        if: always()
+        run: |
+          LINE_RATE=$(grep -oP 'line-rate="\K[^"]+' CoverageReport/Cobertura.xml | head -1)
+          COVERAGE_PCT=$(echo "$LINE_RATE * 100" | bc)
+          echo "Combined line coverage: ${COVERAGE_PCT}%"
+          if (( $(echo "$LINE_RATE < 0.70" | bc -l) )); then
+            echo "Coverage ${COVERAGE_PCT}% is below the required 70% threshold."
+            exit 1
+          fi
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: day 3/program-cs/QuotesApi/TestResults/**/*.trx
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: day 3/program-cs/QuotesApi/CoverageReport
