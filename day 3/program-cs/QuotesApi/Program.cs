@@ -13,6 +13,7 @@ using QuotesApi.Authorization;
 using Serilog;
 using Serilog.Context;
 using OpenTelemetry.Trace;
+using Microsoft.Extensions.Options;
 using QuotesApi;
 using QuotesApi.Options;
 
@@ -25,9 +26,6 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<EntraOptions>(builder.Configuration.GetSection("Entra"));
-
-var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
-var entraOptions = builder.Configuration.GetSection("Entra").Get<EntraOptions>() ?? new EntraOptions();
 
 builder.Services.AddSingleton(Telemetry.ActivitySource);
 
@@ -55,16 +53,6 @@ builder.Services
     })
     .AddJwtBearer(InternalScheme, options =>
 {
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtOptions.Key)),
-        ValidateIssuer = false,
-        ValidateAudience = false,
-        ValidateLifetime = true
-    };
-
     options.Events = new JwtBearerEvents
     {
         OnAuthenticationFailed = context =>
@@ -83,24 +71,6 @@ builder.Services
 })
     .AddJwtBearer(EntraScheme, options =>
 {
-    var tenantId = entraOptions.TenantId;
-    var audience = entraOptions.Audience;
-
-    options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
-    options.Audience = audience;
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidIssuers = new[]
-        {
-            $"https://login.microsoftonline.com/{tenantId}/v2.0",
-            $"https://sts.windows.net/{tenantId}/"
-        },
-        ValidateAudience = true,
-        ValidAudience = audience,
-        ValidateLifetime = true
-    };
-
     options.Events = new JwtBearerEvents
     {
         OnAuthenticationFailed = context =>
@@ -147,6 +117,43 @@ builder.Services
             }
 
             return InternalScheme;
+        };
+    });
+
+builder.Services.AddOptions<JwtBearerOptions>(InternalScheme)
+    .Configure<IOptions<JwtOptions>>((options, jwtOptions) =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtOptions.Value.Key)),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true
+        };
+    });
+
+builder.Services.AddOptions<JwtBearerOptions>(EntraScheme)
+    .Configure<IOptions<EntraOptions>>((options, entraOptionsAccessor) =>
+    {
+        var entraOptions = entraOptionsAccessor.Value;
+        var tenantId = entraOptions.TenantId;
+        var audience = entraOptions.Audience;
+
+        options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
+        options.Audience = audience;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuers = new[]
+            {
+                $"https://login.microsoftonline.com/{tenantId}/v2.0",
+                $"https://sts.windows.net/{tenantId}/"
+            },
+            ValidateAudience = true,
+            ValidAudience = audience,
+            ValidateLifetime = true
         };
     });
 
