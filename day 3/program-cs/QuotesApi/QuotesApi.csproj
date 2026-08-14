@@ -17,6 +17,10 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.11" />
 
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +30,8 @@
     <None Remove="QuotesApi.Tests.Integration/**/*.cs" />
     <Compile Remove="Quotes.Tests.Unit/**/*.cs" />
     <None Remove="Quotes.Tests.Unit/**/*.cs" />
+    <Compile Remove="Quotes.Tests.Integration/**/*.cs" />
+    <None Remove="Quotes.Tests.Integration/**/*.cs" />
   </ItemGroup>
 
 </Project>
