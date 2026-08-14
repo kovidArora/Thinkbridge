@@ -10,8 +10,15 @@ using System.Text;
 using QuotesApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using QuotesApi.Authorization;
+using Serilog;
+using Serilog.Context;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext());
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
@@ -44,8 +51,14 @@ builder.Services
     {
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine("=== INTERNAL AUTH FAILED ===");
-            Console.WriteLine(context.Exception.ToString());
+            var logger = context.HttpContext.RequestServices
+                .GetRequiredService<ILogger<Program>>();
+
+            logger.LogWarning(
+                context.Exception,
+                "Internal JWT authentication failed for {Path}",
+                context.HttpContext.Request.Path);
+
             return Task.CompletedTask;
         }
     };
@@ -74,8 +87,14 @@ builder.Services
     {
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine("=== ENTRA AUTH FAILED ===");
-            Console.WriteLine(context.Exception.ToString());
+            var logger = context.HttpContext.RequestServices
+                .GetRequiredService<ILogger<Program>>();
+
+            logger.LogWarning(
+                context.Exception,
+                "Entra JWT authentication failed for {Path}",
+                context.HttpContext.Request.Path);
+
             return Task.CompletedTask;
         }
     };
@@ -123,6 +142,16 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+app.Use((context, next) =>
+{
+    using (LogContext.PushProperty("TraceId", context.TraceIdentifier))
+    {
+        return next();
+    }
+});
+
+app.UseSerilogRequestLogging();
 
 app.UseMiddleware<ExceptionMiddleware>();
 
