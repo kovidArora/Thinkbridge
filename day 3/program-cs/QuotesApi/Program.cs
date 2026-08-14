@@ -38,7 +38,8 @@ var otelBuilder = builder.Services.AddOpenTelemetry()
         .AddHttpClientInstrumentation()
         .AddOtlpExporter());
 
-var appInsightsConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+var appInsightsConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"]
+    ?? builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
 if (!string.IsNullOrEmpty(appInsightsConnectionString))
 {
     otelBuilder.UseAzureMonitor(options =>
