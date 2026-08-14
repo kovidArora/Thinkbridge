@@ -167,6 +167,8 @@ builder.Services.AddOptions<JwtBearerOptions>(EntraScheme)
         };
     });
 
+builder.Services.AddHealthChecks();
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("can-edit-quotes", policy =>
@@ -195,6 +197,8 @@ app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHealthChecks("/health");
 
 // Apply any pending EF Core migrations
 using (var scope = app.Services.CreateScope())
