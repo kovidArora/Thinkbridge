@@ -1,10 +1,11 @@
 ﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using QuotesApi.Data;
 using QuotesApi.Models;
+using QuotesApi.Options;
 using QuotesApi.Repositories;
 using QuotesApi.Services;
 using Xunit;
@@ -22,16 +23,14 @@ public class RefreshTokenServiceTests
         return new QuotesDbContext(options);
     }
 
-    private static IConfiguration CreateConfiguration()
+    private static IOptionsSnapshot<JwtOptions> CreateOptions()
     {
-        var settings = new Dictionary<string, string?>
+        var snapshot = Substitute.For<IOptionsSnapshot<JwtOptions>>();
+        snapshot.Value.Returns(new JwtOptions
         {
-            ["Jwt:RefreshTokenExpiryDays"] = "30"
-        };
-
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(settings)
-            .Build();
+            RefreshTokenLifetime = TimeSpan.FromDays(30)
+        });
+        return snapshot;
     }
 
     [Fact]
@@ -44,7 +43,7 @@ public class RefreshTokenServiceTests
 
         var sut = new RefreshTokenService(
             db,
-            CreateConfiguration(),
+            CreateOptions(),
             Substitute.For<ILogger<RefreshTokenService>>(),
             clock);
 
@@ -69,7 +68,7 @@ public class RefreshTokenServiceTests
 
         var sut = new RefreshTokenService(
             db,
-            CreateConfiguration(),
+            CreateOptions(),
             Substitute.For<ILogger<RefreshTokenService>>(),
             clock);
 
@@ -94,7 +93,7 @@ public class RefreshTokenServiceTests
 
         var sut = new RefreshTokenService(
             db,
-            CreateConfiguration(),
+            CreateOptions(),
             Substitute.For<ILogger<RefreshTokenService>>(),
             Substitute.For<IClock>());
 
@@ -114,7 +113,7 @@ public class RefreshTokenServiceTests
 
         var sut = new RefreshTokenService(
             db,
-            CreateConfiguration(),
+            CreateOptions(),
             Substitute.For<ILogger<RefreshTokenService>>(),
             clock);
 
@@ -137,7 +136,7 @@ public class RefreshTokenServiceTests
 
         var sut = new RefreshTokenService(
             db,
-            CreateConfiguration(),
+            CreateOptions(),
             Substitute.For<ILogger<RefreshTokenService>>(),
             clock);
 
@@ -164,7 +163,7 @@ public class RefreshTokenServiceTests
 
         var sut = new RefreshTokenService(
             db,
-            CreateConfiguration(),
+            CreateOptions(),
             Substitute.For<ILogger<RefreshTokenService>>(),
             clock);
 
@@ -183,7 +182,7 @@ public class RefreshTokenServiceTests
 
         var sut = new RefreshTokenService(
             db,
-            CreateConfiguration(),
+            CreateOptions(),
             Substitute.For<ILogger<RefreshTokenService>>(),
             Substitute.For<IClock>());
 
@@ -202,7 +201,7 @@ public class RefreshTokenServiceTests
 
         var sut = new RefreshTokenService(
             db,
-            CreateConfiguration(),
+            CreateOptions(),
             Substitute.For<ILogger<RefreshTokenService>>(),
             clock);
 

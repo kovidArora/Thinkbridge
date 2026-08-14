@@ -1,6 +1,8 @@
 ﻿using FluentAssertions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using NSubstitute;
 using QuotesApi.Models;
+using QuotesApi.Options;
 using QuotesApi.Services;
 using System.IdentityModel.Tokens.Jwt;
 using Xunit;
@@ -10,22 +12,21 @@ namespace Quotes.Tests.Unit;
 
 public class JwtTokenServiceTests
 {
-    private static IConfiguration CreateConfiguration()
+    private static IOptionsSnapshot<JwtOptions> CreateOptions()
     {
-        var settings = new Dictionary<string, string?>
+        var snapshot = Substitute.For<IOptionsSnapshot<JwtOptions>>();
+        snapshot.Value.Returns(new JwtOptions
         {
-            ["Jwt:Key"] = "this-is-a-32-byte-secret-key-1234"
-        };
-
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(settings)
-            .Build();
+            Key = "this-is-a-32-byte-secret-key-1234",
+            AccessTokenLifetime = TimeSpan.FromHours(1)
+        });
+        return snapshot;
     }
 
     [Fact]
     public void GenerateAccessToken_ValidUser_ReturnsTokenWithExpectedClaims()
     {
-        var sut = new JwtTokenService(CreateConfiguration());
+        var sut = new JwtTokenService(CreateOptions());
         var user = new User { Id = 42, Email = "test@example.com" };
 
         var (accessToken, expiresInSeconds) = sut.GenerateAccessToken(user);
@@ -44,7 +45,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void GenerateAccessToken_ValidUser_SetsExpiryApproximatelyOneHourFromNow()
     {
-        var sut = new JwtTokenService(CreateConfiguration());
+        var sut = new JwtTokenService(CreateOptions());
         var user = new User { Id = 1, Email = "test@example.com" };
 
         var (accessToken, _) = sut.GenerateAccessToken(user);
