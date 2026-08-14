@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using QuotesApi.Models;
+using QuotesApi.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -8,16 +10,16 @@ namespace QuotesApi.Services;
 
 public class JwtTokenService : IJwtTokenService
 {
-    private readonly IConfiguration _configuration;
+    private readonly IOptionsSnapshot<JwtOptions> _jwtOptions;
 
-    public JwtTokenService(IConfiguration configuration)
+    public JwtTokenService(IOptionsSnapshot<JwtOptions> jwtOptions)
     {
-        _configuration = configuration;
+        _jwtOptions = jwtOptions;
     }
 
     public (string AccessToken, int ExpiresInSeconds) GenerateAccessToken(User user)
     {
-        var key = _configuration["Jwt:Key"]!;
+        var options = _jwtOptions.Value;
 
         var claims = new[]
         {
@@ -26,11 +28,11 @@ public class JwtTokenService : IJwtTokenService
             new Claim("scope", "quotes.write")
         };
 
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.Key));
         var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
 
-        const int expiresInSeconds = 3600;
-        var expires = DateTime.UtcNow.AddSeconds(expiresInSeconds);
+        var expiresInSeconds = (int)options.AccessTokenLifetime.TotalSeconds;
+        var expires = DateTime.UtcNow.Add(options.AccessTokenLifetime);
 
         var token = new JwtSecurityToken(
             claims: claims,

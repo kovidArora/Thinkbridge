@@ -1,39 +1,40 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using QuotesApi.Data;
 using QuotesApi.Models;
+using QuotesApi.Options;
 using System.Security.Cryptography;
 using System.Text;
 using QuotesApi.Repositories;
 namespace QuotesApi.Services;
- 
+
 public class RefreshTokenService : IRefreshTokenService
 {
     private readonly QuotesDbContext _db;
-    private readonly IConfiguration _configuration;
+    private readonly IOptionsSnapshot<JwtOptions> _jwtOptions;
     private readonly ILogger<RefreshTokenService> _logger;
     private readonly IClock _clock;
- 
+
     public RefreshTokenService(
         QuotesDbContext db,
-        IConfiguration configuration,
+        IOptionsSnapshot<JwtOptions> jwtOptions,
         ILogger<RefreshTokenService> logger,
         IClock clock)
     {
         _db = db;
-        _configuration = configuration;
+        _jwtOptions = jwtOptions;
         _logger = logger;
         _clock = clock;
     }
- 
-    private int RefreshTokenExpiryDays =>
-        int.TryParse(_configuration["Jwt:RefreshTokenExpiryDays"], out var days) ? days : 30;
+
+    private TimeSpan RefreshTokenLifetime => _jwtOptions.Value.RefreshTokenLifetime;
  
     public async Task<(string RawToken, DateTimeOffset ExpiresAt)> GenerateAsync(
         int userId,
         string? familyId = null)
     {
         var rawToken = GenerateRawToken();
-        var expiresAt = _clock.UtcNow.AddDays(RefreshTokenExpiryDays);
+        var expiresAt = _clock.UtcNow.Add(RefreshTokenLifetime);
  
         var entity = new RefreshToken
         {
@@ -86,7 +87,7 @@ public class RefreshTokenService : IRefreshTokenService
  
         var newRawToken = GenerateRawToken();
         var newHashed = Hash(newRawToken);
-        var newExpiresAt = now.AddDays(RefreshTokenExpiryDays);
+        var newExpiresAt = now.Add(RefreshTokenLifetime);
  
         existing.RevokedAt = now;
         existing.ReplacedByToken = newHashed;

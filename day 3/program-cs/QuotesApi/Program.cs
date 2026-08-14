@@ -14,6 +14,7 @@ using Serilog;
 using Serilog.Context;
 using OpenTelemetry.Trace;
 using QuotesApi;
+using QuotesApi.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,12 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)
     .Enrich.FromLogContext());
+
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<EntraOptions>(builder.Configuration.GetSection("Entra"));
+
+var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
+var entraOptions = builder.Configuration.GetSection("Entra").Get<EntraOptions>() ?? new EntraOptions();
 
 builder.Services.AddSingleton(Telemetry.ActivitySource);
 
@@ -52,8 +59,7 @@ builder.Services
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(
-                builder.Configuration["Jwt:Key"]!)),
+            Encoding.UTF8.GetBytes(jwtOptions.Key)),
         ValidateIssuer = false,
         ValidateAudience = false,
         ValidateLifetime = true
@@ -77,8 +83,8 @@ builder.Services
 })
     .AddJwtBearer(EntraScheme, options =>
 {
-    var tenantId = builder.Configuration["Entra:TenantId"];
-    var audience = builder.Configuration["Entra:Audience"];
+    var tenantId = entraOptions.TenantId;
+    var audience = entraOptions.Audience;
 
     options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
     options.Audience = audience;
