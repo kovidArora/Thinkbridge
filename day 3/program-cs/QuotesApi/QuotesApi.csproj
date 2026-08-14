@@ -23,15 +23,4 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="QuotesApi.Tests/**/*.cs" />
-    <None Remove="QuotesApi.Tests/**/*.cs" />
-    <Compile Remove="QuotesApi.Tests.Integration/**/*.cs" />
-    <None Remove="QuotesApi.Tests.Integration/**/*.cs" />
-    <Compile Remove="Quotes.Tests.Unit/**/*.cs" />
-    <None Remove="Quotes.Tests.Unit/**/*.cs" />
-    <Compile Remove="Quotes.Tests.Integration/**/*.cs" />
-    <None Remove="Quotes.Tests.Integration/**/*.cs" />
-  </ItemGroup>
-
 </Project>

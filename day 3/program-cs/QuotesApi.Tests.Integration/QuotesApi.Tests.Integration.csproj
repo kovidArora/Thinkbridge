@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\QuotesApi.csproj" />
+    <ProjectReference Include="..\QuotesApi\QuotesApi.csproj" />
   </ItemGroup>
 
 </Project>
