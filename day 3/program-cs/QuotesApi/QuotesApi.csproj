@@ -7,6 +7,16 @@
     <UserSecretsId>31ed97dd-23b5-42e1-acde-650ba434864f</UserSecretsId>
     <ContainerRepository>quotes-api</ContainerRepository>
     <ContainerImageTag>0.1.0</ContainerImageTag>
+  </PropertyGroup>
+
+  <!-- azd's SDK-container deploy path hardcodes `-r linux-x64` (glibc), which is incompatible
+       with an Alpine (musl) base image for apps with native deps like SQLite. Use the standard
+       glibc image when linux-x64 is explicitly requested (azd's path); otherwise default to the
+       smaller Alpine image with the matching musl runtime (our manual `dotnet publish -t:PublishContainer`). -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
+    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0</ContainerBaseImage>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != 'linux-x64'">
     <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0-alpine</ContainerBaseImage>
     <ContainerRuntimeIdentifier>linux-musl-x64</ContainerRuntimeIdentifier>
   </PropertyGroup>
