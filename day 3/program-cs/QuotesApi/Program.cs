@@ -13,6 +13,7 @@ using QuotesApi.Authorization;
 using Serilog;
 using Serilog.Context;
 using OpenTelemetry.Trace;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.Extensions.Options;
 using QuotesApi;
 using QuotesApi.Options;
@@ -29,13 +30,22 @@ builder.Services.Configure<EntraOptions>(builder.Configuration.GetSection("Entra
 
 builder.Services.AddSingleton(Telemetry.ActivitySource);
 
-builder.Services.AddOpenTelemetry()
+var otelBuilder = builder.Services.AddOpenTelemetry()
     .WithTracing(t => t
         .AddSource(Telemetry.ServiceName)
         .AddAspNetCoreInstrumentation()
         .AddEntityFrameworkCoreInstrumentation()
         .AddHttpClientInstrumentation()
         .AddOtlpExporter());
+
+var appInsightsConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+if (!string.IsNullOrEmpty(appInsightsConnectionString))
+{
+    otelBuilder.UseAzureMonitor(options =>
+    {
+        options.ConnectionString = appInsightsConnectionString;
+    });
+}
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
