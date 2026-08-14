@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Authorization;
 using QuotesApi.Authorization;
 using Serilog;
 using Serilog.Context;
+using OpenTelemetry.Trace;
+using QuotesApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +21,16 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)
     .Enrich.FromLogContext());
+
+builder.Services.AddSingleton(Telemetry.ActivitySource);
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(t => t
+        .AddSource(Telemetry.ServiceName)
+        .AddAspNetCoreInstrumentation()
+        .AddEntityFrameworkCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter());
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
@@ -145,7 +157,10 @@ var app = builder.Build();
 
 app.Use((context, next) =>
 {
-    using (LogContext.PushProperty("TraceId", context.TraceIdentifier))
+    var traceId = System.Diagnostics.Activity.Current?.TraceId.ToString()
+        ?? context.TraceIdentifier;
+
+    using (LogContext.PushProperty("TraceId", traceId))
     {
         return next();
     }

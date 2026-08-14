@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using QuotesApi.Data;
 using QuotesApi.Services;
@@ -12,13 +13,21 @@ public static class AuthEndpointExtensions
             LoginRequest request,
             QuotesDbContext db,
             IJwtTokenService jwtTokenService,
-            IRefreshTokenService refreshTokenService) =>
+            IRefreshTokenService refreshTokenService,
+            ActivitySource activitySource) =>
         {
             var user = await db.Users
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            if (user is null ||
-                !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            bool passwordValid;
+            using (var activity = activitySource.StartActivity("verify-password"))
+            {
+                activity?.SetTag("user.id", user?.Id);
+                passwordValid = user is not null &&
+                    BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+            }
+
+            if (user is null || !passwordValid)
             {
                 return Results.Unauthorized();
             }
