@@ -48,6 +48,8 @@ if (!string.IsNullOrEmpty(appInsightsConnectionString))
     });
 }
 
+builder.Services.AddEntraMetadataClient();
+
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthorizationHandler, MustOwnQuoteHandler>();
