@@ -1,8 +1,3 @@
--- Author summary: quote count + most-recent quote per author, in one statement.
--- Uses a non-recursive CTE with window functions instead of a correlated subquery:
--- a correlated subquery re-executes per outer row (O(n^2)-shaped), while the CTE
--- computes rank + count in a single pass over Quotes, then filters.
-
 WITH RankedQuotes AS (
     SELECT
         Author,
@@ -21,11 +16,6 @@ SELECT
 FROM RankedQuotes
 WHERE rn = 1
 ORDER BY QuoteCount DESC, Author;
-
--- Alternative: aggregate CTE + INNER JOIN back to the base table.
--- Same result, but can return duplicate rows if two quotes from the same
--- author share the exact same PublishedAt timestamp (a tie the JOIN can't
--- disambiguate, unlike ROW_NUMBER() which always picks exactly one row).
 
 WITH AuthorStats AS (
     SELECT
@@ -46,10 +36,6 @@ INNER JOIN Quotes q
     ON q.Author = a.Author
     AND q.PublishedAt = a.LatestPublishedAt
 ORDER BY a.QuoteCount DESC, a.Author;
-
--- Recursive CTE: quotes-per-day report that doesn't silently drop zero-count
--- days. DateRange recursively generates every day in the window; the LEFT JOIN
--- (not INNER JOIN) is what keeps days with no quotes in the result at all.
 
 WITH RECURSIVE DateRange(day) AS (
     SELECT date('2026-08-15')
