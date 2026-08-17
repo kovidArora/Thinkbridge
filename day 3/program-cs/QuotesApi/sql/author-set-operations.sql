@@ -1,5 +1,4 @@
--- No Tags/Category table exists in the real schema. Collections/CollectionItem
--- stand in as tag categories here (two collections named 'classic' and 'modern').
+
 
 SELECT Author FROM Quotes
 EXCEPT
