@@ -1,5 +1,4 @@
--- Run against SQL Server (SQLite has no SET STATISTICS IO / execution plan viewer).
--- Table generated with ~100k rows via a numbers-CTE cross join.
+
 
 CREATE TABLE Orders (
     OrderId INT IDENTITY(1,1) NOT NULL,
