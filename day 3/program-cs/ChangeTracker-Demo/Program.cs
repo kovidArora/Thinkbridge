@@ -30,7 +30,6 @@ await using (var ctx = NewContext())
 
 Console.WriteLine($"Seeded {RowCount} quotes across 50 authors.\n");
 
-// Demo 1: identity resolution — same Author instance no matter which query path finds it
 Console.WriteLine("=== Demo 1: Identity resolution ===");
 await using (var ctx = NewContext())
 {
@@ -55,13 +54,12 @@ await using (var ctx = NewContext())
     Console.WriteLine($"Tracked entries in this context: {ctx.ChangeTracker.Entries().Count()} — the same Author(Id=7) is reused across all three queries instead of one instance per query, thanks to identity resolution\n");
 }
 
-// Demo 2: tracked vs not-tracked mutation behaviour
 Console.WriteLine("=== Demo 2: Tracked vs AsNoTracking on save ===");
 await using (var ctx = NewContext())
 {
     var tracked = await ctx.Quotes.FirstAsync(q => q.Id == 1);
     tracked.Text = "EDITED (tracked)";
-    var changed = await ctx.SaveChangesAsync(); // no explicit Update() call needed
+    var changed = await ctx.SaveChangesAsync();
     Console.WriteLine($"Tracked entity: SaveChangesAsync() persisted {changed} row without an explicit Update() call.");
 }
 
@@ -69,11 +67,10 @@ await using (var ctx = NewContext())
 {
     var untracked = await ctx.Quotes.AsNoTracking().FirstAsync(q => q.Id == 2);
     untracked.Text = "EDITED (no-tracking)";
-    var changed = await ctx.SaveChangesAsync(); // change tracker never saw this entity
+    var changed = await ctx.SaveChangesAsync();
     Console.WriteLine($"AsNoTracking entity: SaveChangesAsync() persisted {changed} rows (mutation is invisible to the change tracker; needs ctx.Update(untracked) to take effect).\n");
 }
 
-// Demo 3: 10k-row read, tracked vs AsNoTracking — time + allocations
 Console.WriteLine("=== Demo 3: 10k-row read benchmark ===");
 var trackedResult = await Measure("Tracked", async () =>
 {
@@ -95,7 +92,6 @@ Console.WriteLine();
 Console.WriteLine($"Time ratio (tracked / no-tracking):   {trackedResult.Elapsed.TotalMilliseconds / noTrackingResult.Elapsed.TotalMilliseconds:F2}x");
 Console.WriteLine($"Alloc ratio (tracked / no-tracking):  {(double)trackedResult.AllocatedBytes / noTrackingResult.AllocatedBytes:F2}x");
 
-// Demo 4: see the generated SQL, then trim it by projecting to a DTO instead of loading whole entities
 Console.WriteLine("=== Demo 4: Generated SQL — full entity vs projected DTO ===");
 var fullEntitySql = new List<string>();
 await using (var ctx = NewContext(sql => fullEntitySql.Add(sql)))
@@ -119,12 +115,10 @@ Console.WriteLine("SQL generated (projected DTO — no AuthorId column fetched):
 Console.WriteLine(LastCommandText(projectedSql));
 Console.WriteLine();
 
-// Demo 5: an accidental client-side evaluation, caught via the SQL log, then fixed
 Console.WriteLine("=== Demo 5: Catching accidental client-side evaluation ===");
 var buggySql = new List<string>();
 await using (var ctx = NewContext(sql => buggySql.Add(sql)))
 {
-    // BUG: ToList() before Where() pulls every row to the client, then filters in memory.
     var buggyResult = ctx.Quotes.ToList().Where(q => q.AuthorId == 7).ToList();
     Console.WriteLine($"Buggy version: {buggyResult.Count} rows in the final result, but the SQL log shows no WHERE clause:");
     Console.WriteLine(LastCommandText(buggySql));
@@ -133,7 +127,6 @@ await using (var ctx = NewContext(sql => buggySql.Add(sql)))
 var fixedSql = new List<string>();
 await using (var ctx = NewContext(sql => fixedSql.Add(sql)))
 {
-    // FIX: Where() before ToList() pushes the filter into SQL.
     var fixedResult = await ctx.Quotes.Where(q => q.AuthorId == 7).ToListAsync();
     Console.WriteLine($"Fixed version: {fixedResult.Count} rows, and the SQL log now shows the WHERE clause doing the filtering:");
     Console.WriteLine(LastCommandText(fixedSql));
@@ -158,7 +151,6 @@ static DemoContext NewContext(Action<string>? sqlSink = null)
 
 static async Task<(int Count, TimeSpan Elapsed, long AllocatedBytes)> Measure(string label, Func<Task<List<Quote>>> action)
 {
-    // Warm up JIT / connection pool so the timed run isn't paying one-time setup cost.
     (await action()).Clear();
     GC.Collect();
     GC.WaitForPendingFinalizers();
