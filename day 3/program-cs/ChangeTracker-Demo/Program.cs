@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 const string DbFile = "changetracker-demo.db";
 const int RowCount = 10_000;
@@ -94,10 +95,66 @@ Console.WriteLine();
 Console.WriteLine($"Time ratio (tracked / no-tracking):   {trackedResult.Elapsed.TotalMilliseconds / noTrackingResult.Elapsed.TotalMilliseconds:F2}x");
 Console.WriteLine($"Alloc ratio (tracked / no-tracking):  {(double)trackedResult.AllocatedBytes / noTrackingResult.AllocatedBytes:F2}x");
 
+// Demo 4: see the generated SQL, then trim it by projecting to a DTO instead of loading whole entities
+Console.WriteLine("=== Demo 4: Generated SQL — full entity vs projected DTO ===");
+var fullEntitySql = new List<string>();
+await using (var ctx = NewContext(sql => fullEntitySql.Add(sql)))
+{
+    var quotes = await ctx.Quotes.Where(q => q.AuthorId == 7).ToListAsync();
+    Console.WriteLine($"Full-entity query returned {quotes.Count} rows.");
+}
+Console.WriteLine("SQL generated (full entity):");
+Console.WriteLine(LastCommandText(fullEntitySql));
+
+var projectedSql = new List<string>();
+await using (var ctx = NewContext(sql => projectedSql.Add(sql)))
+{
+    var dtos = await ctx.Quotes
+        .Where(q => q.AuthorId == 7)
+        .Select(q => new QuoteSummaryDto(q.Id, q.Text))
+        .ToListAsync();
+    Console.WriteLine($"Projected DTO query returned {dtos.Count} rows.");
+}
+Console.WriteLine("SQL generated (projected DTO — no AuthorId column fetched):");
+Console.WriteLine(LastCommandText(projectedSql));
+Console.WriteLine();
+
+// Demo 5: an accidental client-side evaluation, caught via the SQL log, then fixed
+Console.WriteLine("=== Demo 5: Catching accidental client-side evaluation ===");
+var buggySql = new List<string>();
+await using (var ctx = NewContext(sql => buggySql.Add(sql)))
+{
+    // BUG: ToList() before Where() pulls every row to the client, then filters in memory.
+    var buggyResult = ctx.Quotes.ToList().Where(q => q.AuthorId == 7).ToList();
+    Console.WriteLine($"Buggy version: {buggyResult.Count} rows in the final result, but the SQL log shows no WHERE clause:");
+    Console.WriteLine(LastCommandText(buggySql));
+}
+
+var fixedSql = new List<string>();
+await using (var ctx = NewContext(sql => fixedSql.Add(sql)))
+{
+    // FIX: Where() before ToList() pushes the filter into SQL.
+    var fixedResult = await ctx.Quotes.Where(q => q.AuthorId == 7).ToListAsync();
+    Console.WriteLine($"Fixed version: {fixedResult.Count} rows, and the SQL log now shows the WHERE clause doing the filtering:");
+    Console.WriteLine(LastCommandText(fixedSql));
+}
+
+static string LastCommandText(List<string> log) =>
+    log.LastOrDefault(l => l.Contains("Executed DbCommand")) is { } entry
+        ? entry[(entry.IndexOf("SELECT", StringComparison.Ordinal) is var i && i >= 0 ? i : 0)..]
+        : "(no command logged)";
+
 static string RuntimeHelpers(Author a) => $"Id={a.Id,-3} hash=0x{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(a):x8}";
 
-static DemoContext NewContext() =>
-    new(new DbContextOptionsBuilder<DemoContext>().UseSqlite($"Data Source={DbFile}").Options);
+static DemoContext NewContext(Action<string>? sqlSink = null)
+{
+    var builder = new DbContextOptionsBuilder<DemoContext>().UseSqlite($"Data Source={DbFile}");
+    if (sqlSink is not null)
+    {
+        builder.LogTo(sqlSink, LogLevel.Information).EnableSensitiveDataLogging();
+    }
+    return new DemoContext(builder.Options);
+}
 
 static async Task<(int Count, TimeSpan Elapsed, long AllocatedBytes)> Measure(string label, Func<Task<List<Quote>>> action)
 {
@@ -131,6 +188,8 @@ public class Quote
     public int AuthorId { get; set; }
     public Author? Author { get; set; }
 }
+
+public record QuoteSummaryDto(int Id, string Text);
 
 public class DemoContext : DbContext
 {
