@@ -23,8 +23,11 @@ public class QuotesDbContext : DbContext
  
             entity.Property(q => q.Id)
                 .ValueGeneratedOnAdd();
+
+            entity.HasIndex(q => new { q.Author, q.IsDeleted })
+                .HasDatabaseName("IX_Quotes_Author_IsDeleted");
         });
- 
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(u => u.Id);
