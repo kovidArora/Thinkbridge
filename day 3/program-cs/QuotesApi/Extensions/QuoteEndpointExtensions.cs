@@ -15,9 +15,7 @@ public static class QuoteEndpointExtensions
 {
     public static void MapQuoteEndpoints(this WebApplication app)
     {
-        // =========================
-        // Quote endpoints
-        // =========================
+
  
         app.MapGet("/api/quotes", async (
             int page,
@@ -134,9 +132,6 @@ public static class QuoteEndpointExtensions
         })
         .RequireAuthorization("must-own-quote");
  
-        // =========================
-        // Collection endpoints
-        // =========================
  
         app.MapPost("/api/collections", async (
             CreateCollectionRequest request,
