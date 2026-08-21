@@ -63,6 +63,15 @@ public static class QuoteEndpointExtensions
             return Results.Ok(quotes);
         });
 
+        app.MapGet("/api/authors/stats", async (
+            IQuoteRepository repository,
+            CancellationToken cancellationToken) =>
+        {
+            var stats = await repository.GetAuthorStatsAsync(cancellationToken);
+
+            return Results.Ok(stats);
+        });
+
         app.MapGet("/api/quotes/{id:int}", async (
             int id,
             IQuoteRepository repository,

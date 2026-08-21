@@ -97,6 +97,28 @@ public async Task<List<QuoteWithAuthorDto>> GetQuotesWithAuthorEmailAsync(
         .ToList();
 }
 
+public async Task<List<AuthorStatsDto>> GetAuthorStatsAsync(CancellationToken cancellationToken)
+{
+    var authors = await _db.Quotes
+        .AsNoTracking()
+        .Select(q => q.Author)
+        .Distinct()
+        .ToListAsync(cancellationToken);
+
+    var stats = new List<AuthorStatsDto>();
+
+    foreach (var author in authors)
+    {
+        var count = await _db.Quotes
+            .AsNoTracking()
+            .CountAsync(q => q.Author == author && !q.IsDeleted, cancellationToken);
+
+        stats.Add(new AuthorStatsDto(author, count));
+    }
+
+    return stats;
+}
+
 public async Task<Quote> AddAsync( Quote quote, CancellationToken cancellationToken) {
     quote.PublishedAt = _clock.UtcNow;
     

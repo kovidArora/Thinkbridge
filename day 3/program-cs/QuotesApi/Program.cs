@@ -227,6 +227,28 @@ using (var scope = app.Services.CreateScope())
 
     db.SaveChanges();
 }
+
+    if (app.Environment.IsDevelopment() && !db.Quotes.Any())
+    {
+        var seedUserId = db.Users.Select(u => u.Id).First();
+        var rnd = new Random(1234);
+        const int authorCount = 300;
+        const int quoteCount = 20_000;
+
+        for (var i = 1; i <= quoteCount; i++)
+        {
+            var author = $"Author {rnd.Next(1, authorCount + 1)}";
+            var (quote, _) = Quote.Create(author, $"Quote number {i}", seedUserId);
+            db.Quotes.Add(quote!);
+
+            if (i % 2000 == 0)
+            {
+                db.SaveChanges();
+            }
+        }
+
+        db.SaveChanges();
+    }
 }
 
 app.MapQuoteEndpoints();
