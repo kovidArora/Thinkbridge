@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using QuotesApi.Commands;
 using QuotesApi.Data;
+using QuotesApi.Queries;
 using QuotesApi.Repositories;
 using QuotesApi.Services;
 
@@ -16,6 +18,8 @@ public static class InfrastructureExtensions
                 configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<IQuoteRepository, QuoteRepository>();
+        services.AddScoped<CreateQuoteCommandHandler>();
+        services.AddScoped<QuoteReadModel>();
         services.AddScoped<ICollectionRepository, CollectionRepository>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();

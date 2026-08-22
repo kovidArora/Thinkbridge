@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using QuotesApi.Commands;
 using QuotesApi.Data;
 using QuotesApi.Models;
+using QuotesApi.Queries;
 using QuotesApi.Repositories;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -50,10 +52,10 @@ public static class QuoteEndpointExtensions
         app.MapGet("/api/quotes/with-authors", async (
             int page,
             int size,
-            IQuoteRepository repository,
+            QuoteReadModel readModel,
             CancellationToken cancellationToken) =>
         {
-            var quotes = await repository.GetQuotesWithAuthorEmailAsync(
+            var quotes = await readModel.GetQuotesWithAuthorEmailAsync(
                 page,
                 size,
                 cancellationToken);
@@ -86,34 +88,29 @@ public static class QuoteEndpointExtensions
  
         app.MapPost("/api/quotes", async (
             CreateQuoteRequest request,
-            IQuoteRepository repository,
+            CreateQuoteCommandHandler commandHandler,
             ClaimsPrincipal user,
             CancellationToken cancellationToken) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
- 
+
             if (!int.TryParse(userIdClaim, out var userId))
             {
                 return Results.Unauthorized();
             }
- 
-            var (quote, error) = Quote.Create(
-                request.Author,
-                request.Text,
-                userId);
- 
+
+            var (quote, error) = await commandHandler.HandleAsync(
+                new CreateQuoteCommand(request.Author, request.Text, userId),
+                cancellationToken);
+
             if (quote is null)
             {
                 return Results.BadRequest(error);
             }
- 
-            var created = await repository.AddAsync(
-                quote,
-                cancellationToken);
- 
+
             return Results.Created(
-                $"/api/quotes/{created.Id}",
-                created);
+                $"/api/quotes/{quote.Id}",
+                quote);
         })
         .RequireAuthorization("can-edit-quotes");
  

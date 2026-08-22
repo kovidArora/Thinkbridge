@@ -13,20 +13,11 @@ public interface IQuoteRepository
         int size,
         CancellationToken cancellationToken);
 
-    Task<List<QuoteWithAuthorDto>> GetQuotesWithAuthorEmailAsync(
-        int page,
-        int size,
-        CancellationToken cancellationToken);
-
     Task<List<AuthorStatsDto>> GetAuthorStatsAsync(
         CancellationToken cancellationToken);
 
     Task<Quote?> GetByIdAsync(
         int id,
-        CancellationToken cancellationToken);
-
-    Task<Quote> AddAsync(
-        Quote quote,
         CancellationToken cancellationToken);
 
     Task<bool> DeleteAsync(
