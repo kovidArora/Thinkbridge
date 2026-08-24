@@ -1,0 +1,43 @@
+<div class="quotes-page">
+  <section class="quotes-list">
+    <h2>Quotes</h2>
+    <button type="button" (click)="reload()">Reload</button>
+
+    @if (loading()) {
+      <p>Loading…</p>
+    } @else if (error()) {
+      <p class="error">{{ error() }}</p>
+    } @else if (quotes().length === 0) {
+      <p>No quotes found.</p>
+    } @else {
+      <ul>
+        @for (quote of quotes(); track quote.id) {
+          <li [class.selected]="quote.id === selectedId()">
+            <button type="button" (click)="selectQuote(quote.id)">
+              #{{ quote.id }} — {{ quote.author }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <section class="quote-detail">
+    <h2>Detail</h2>
+    @if (selectedId() === null) {
+      <p>Select a quote to see its detail.</p>
+    } @else if (detailLoading()) {
+      <p>Loading detail…</p>
+    } @else if (detailError()) {
+      <p class="error">{{ detailError() }}</p>
+    } @else if (selectedQuote(); as quote) {
+      <dl>
+        <dt>Id</dt><dd>{{ quote.id }}</dd>
+        <dt>Author</dt><dd>{{ quote.author }}</dd>
+        <dt>Text</dt><dd>{{ quote.text }}</dd>
+        <dt>Published</dt><dd>{{ quote.publishedAt }}</dd>
+        <dt>Deleted</dt><dd>{{ quote.isDeleted }}</dd>
+      </dl>
+    }
+  </section>
+</div>

@@ -1,0 +1,18 @@
+.quotes-page {
+  display: flex;
+  gap: 2rem;
+  font-family: system-ui, sans-serif;
+}
+
+.quotes-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.quotes-list li.selected button {
+  font-weight: bold;
+}
+
+.error {
+  color: #b00020;
+}
