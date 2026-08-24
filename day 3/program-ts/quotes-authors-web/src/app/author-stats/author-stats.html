@@ -1,0 +1,46 @@
+<section class="author-stats">
+  <h2>Author quote counts</h2>
+
+  <label>
+    Min quotes:
+    <input
+      type="number"
+      min="0"
+      [value]="minQuotes()"
+      (input)="setMinQuotes($any($event.target).value)"
+    />
+  </label>
+
+  <button type="button" (click)="reload()">Reload</button>
+
+  @if (loading()) {
+    <p>Loading…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (filteredAuthors().length === 0) {
+    <p>No authors match the current filter.</p>
+  } @else {
+    <p>{{ filteredCount() }} of {{ authors().length }} authors shown</p>
+
+    <ul>
+      @for (author of filteredAuthors(); track author.author) {
+        <li>
+          <span class="name">{{ author.author }}</span>
+          <span class="count">
+            @switch (true) {
+              @case (author.quoteCount >= 80) {
+                <strong>{{ author.quoteCount }} (high)</strong>
+              }
+              @case (author.quoteCount >= 50) {
+                {{ author.quoteCount }} (medium)
+              }
+              @default {
+                {{ author.quoteCount }} (low)
+              }
+            }
+          </span>
+        </li>
+      }
+    </ul>
+  }
+</section>
