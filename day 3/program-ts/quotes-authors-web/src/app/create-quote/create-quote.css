@@ -1,0 +1,29 @@
+.create-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 480px;
+  font-family: system-ui, sans-serif;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.field input,
+.field textarea {
+  padding: 0.4rem;
+  font: inherit;
+}
+
+.error {
+  color: #b00020;
+  margin: 0;
+}
+
+.success {
+  color: #0a7a2f;
+  margin: 0;
+}

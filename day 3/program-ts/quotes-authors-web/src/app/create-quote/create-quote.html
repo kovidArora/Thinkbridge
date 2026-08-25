@@ -1,0 +1,54 @@
+<form class="create-quote" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+  <h2>Create a quote</h2>
+
+  <div class="field">
+    <label for="author">Author</label>
+    <input
+      id="author"
+      type="text"
+      formControlName="author"
+      [attr.aria-invalid]="authorControl.invalid && authorControl.touched ? true : null"
+      [attr.aria-describedby]="authorControl.invalid && authorControl.touched ? 'author-error' : null"
+    />
+    @if (authorControl.invalid && authorControl.touched) {
+      <p id="author-error" class="error" role="alert">
+        @if (authorControl.hasError('required')) {
+          Author is required.
+        } @else if (authorControl.hasError('maxlength')) {
+          Author must be 200 characters or fewer.
+        }
+      </p>
+    }
+  </div>
+
+  <div class="field">
+    <label for="text">Quote text</label>
+    <textarea
+      id="text"
+      formControlName="text"
+      [attr.aria-invalid]="textControl.invalid && textControl.touched ? true : null"
+      [attr.aria-describedby]="textControl.invalid && textControl.touched ? 'text-error' : null"
+    ></textarea>
+    @if (textControl.invalid && textControl.touched) {
+      <p id="text-error" class="error" role="alert">
+        @if (textControl.hasError('required')) {
+          Quote text is required.
+        } @else if (textControl.hasError('maxlength')) {
+          Quote text must be 1000 characters or fewer.
+        }
+      </p>
+    }
+  </div>
+
+  @if (serverError()) {
+    <p class="error server-error" role="alert">{{ serverError() }}</p>
+  }
+
+  @if (success()) {
+    <p class="success" role="status">Quote created.</p>
+  }
+
+  <button type="submit" [disabled]="submitting()">
+    {{ submitting() ? 'Creating…' : 'Create quote' }}
+  </button>
+</form>
