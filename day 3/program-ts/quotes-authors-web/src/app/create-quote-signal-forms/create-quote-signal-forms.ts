@@ -2,6 +2,7 @@ import { Component, inject, signal, ElementRef, viewChild } from '@angular/core'
 import { form, required, maxLength, submit, FormField, FormRoot } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { CreateQuoteService } from '../create-quote/create-quote.service';
+import { AppHttpError } from '../core/http/app-http-error';
 
 @Component({
   selector: 'app-create-quote-signal-forms',
@@ -44,8 +45,8 @@ export class CreateQuoteSignalFormsComponent {
         await firstValueFrom(this.createQuoteService.createQuote(this.quoteForm().value()));
         this.success.set(true);
         this.model.set({ author: '', text: '' });
-      } catch {
-        this.serverError.set('Failed to create quote.');
+      } catch (err) {
+        this.serverError.set((err as AppHttpError).message ?? 'Failed to create quote.');
       }
       return undefined;
     });

@@ -1,6 +1,7 @@
 import { Component, ElementRef, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CreateQuoteService } from './create-quote.service';
+import { AppHttpError } from '../core/http/app-http-error';
 
 @Component({
   selector: 'app-create-quote',
@@ -48,13 +49,9 @@ export class CreateQuoteComponent {
         this.success.set(true);
         this.form.reset();
       },
-      error: (err: unknown) => {
+      error: (err: AppHttpError) => {
         this.submitting.set(false);
-        const message =
-          typeof err === 'object' && err !== null && 'error' in err && typeof (err as { error: unknown }).error === 'string'
-            ? (err as { error: string }).error
-            : 'Failed to create quote.';
-        this.serverError.set(message);
+        this.serverError.set(err.message ?? 'Failed to create quote.');
       },
     });
   }

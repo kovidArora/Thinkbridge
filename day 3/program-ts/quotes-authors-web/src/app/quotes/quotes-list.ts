@@ -3,6 +3,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of, switchMap, tap } from 'rxjs';
 import { Quote } from './quote.model';
 import { QuotesService } from './quotes.service';
+import { AppHttpError } from '../core/http/app-http-error';
 
 @Component({
   selector: 'app-quotes-list',
@@ -34,9 +35,9 @@ export class QuotesListComponent {
 
       return this.quotesService.getQuoteById(id).pipe(
         tap(() => this.detailLoading.set(false)),
-        catchError(() => {
+        catchError((err: AppHttpError) => {
           this.detailLoading.set(false);
-          this.detailError.set('Failed to load quote detail.');
+          this.detailError.set(err.message ?? 'Failed to load quote detail.');
           return of(null);
         })
       );
@@ -68,9 +69,9 @@ export class QuotesListComponent {
         this.quotes.set(quotes);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: (err: AppHttpError) => {
         this.loading.set(false);
-        this.error.set('Failed to load quotes.');
+        this.error.set(err.message ?? 'Failed to load quotes.');
         console.error(err);
       },
     });
