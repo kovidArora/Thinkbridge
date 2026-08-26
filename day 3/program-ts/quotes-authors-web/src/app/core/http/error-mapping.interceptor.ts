@@ -22,18 +22,12 @@ export const errorMappingInterceptor: HttpInterceptorFn = (req, next) =>
 function toAppHttpError(error: HttpErrorResponse): AppHttpError {
   const body: unknown = error.error;
 
-  // Real shape from GET /api/quotes on page/size validation failure: ValidationProblemDetails
-  // ({ title, status, errors: { page: ["Page must be greater than 0."] } }).
+  // Every 4xx from QuotesApi is ValidationProblemDetails-shaped
+  // ({ title, status, errors: { <field>: ["message"] } }), on every endpoint.
   if (isValidationProblemDetails(body)) {
     const fieldErrors = body.errors!;
     const message = Object.values(fieldErrors).flat().join(' ');
     return { status: error.status, message: message || body.title || 'Validation failed.', fieldErrors };
-  }
-
-  // Real shape from POST /api/quotes on a 400: a bare JSON string, NOT ProblemDetails at all
-  // (e.g. "Text must be between 1 and 1000 characters."). Different endpoint, different shape.
-  if (typeof body === 'string' && body.length > 0) {
-    return { status: error.status, message: body };
   }
 
   if (error.status === 0) {

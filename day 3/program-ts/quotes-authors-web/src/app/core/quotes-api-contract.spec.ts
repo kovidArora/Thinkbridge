@@ -42,8 +42,8 @@ describe('QuotesApi contract: GET /api/quotes', () => {
   });
 });
 
-describe('QuotesApi contract: POST /api/quotes 400 shape (NOT ProblemDetails)', () => {
-  it('an invalid create request returns 400 as a bare JSON string, not ValidationProblemDetails', async () => {
+describe('QuotesApi contract: POST /api/quotes 400 shape', () => {
+  it('an invalid create request returns 400 shaped like ValidationProblemDetails, keyed by field', async () => {
     const login = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -62,8 +62,9 @@ describe('QuotesApi contract: POST /api/quotes 400 shape (NOT ProblemDetails)', 
     expect(response.status).toBe(400);
 
     const body = await response.json();
-    // This is the real, currently-verified shape: a bare string, NOT { title, status, errors }.
-    expect(typeof body).toBe('string');
-    expect(body.length).toBeGreaterThan(0);
+    // Same envelope as GET /api/quotes's validation errors: { title, status, errors }.
+    expect(body.status).toBe(400);
+    expect(body.errors).toBeTruthy();
+    expect(Array.isArray(body.errors.text)).toBe(true);
   });
 });

@@ -105,7 +105,12 @@ public static class QuoteEndpointExtensions
 
             if (quote is null)
             {
-                return Results.BadRequest(error);
+                var field = error!.StartsWith("Text", StringComparison.Ordinal) ? "text" : "author";
+
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    [field] = [error]
+                });
             }
 
             return Results.Created(
