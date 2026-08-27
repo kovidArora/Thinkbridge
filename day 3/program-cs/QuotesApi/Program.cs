@@ -232,13 +232,12 @@ using (var scope = app.Services.CreateScope())
     {
         var seedUserId = db.Users.Select(u => u.Id).First();
         var rnd = new Random(1234);
-        const int authorCount = 300;
         const int quoteCount = 20_000;
 
         for (var i = 1; i <= quoteCount; i++)
         {
-            var author = $"Author {rnd.Next(1, authorCount + 1)}";
-            var (quote, _) = Quote.Create(author, $"Quote number {i}", seedUserId);
+            var (author, text) = SeedQuotes.RealQuotes[rnd.Next(SeedQuotes.RealQuotes.Length)];
+            var (quote, _) = Quote.Create(author, text, seedUserId);
             db.Quotes.Add(quote!);
 
             if (i % 2000 == 0)
