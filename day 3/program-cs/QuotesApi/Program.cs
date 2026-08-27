@@ -65,41 +65,41 @@ builder.Services
         options.DefaultChallengeScheme = "smart";
     })
     .AddJwtBearer(InternalScheme, options =>
-{
-    options.Events = new JwtBearerEvents
     {
-        OnAuthenticationFailed = context =>
+        options.Events = new JwtBearerEvents
         {
-            var logger = context.HttpContext.RequestServices
-                .GetRequiredService<ILogger<Program>>();
+            OnAuthenticationFailed = context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILogger<Program>>();
 
-            logger.LogWarning(
-                context.Exception,
-                "Internal JWT authentication failed for {Path}",
-                context.HttpContext.Request.Path);
+                logger.LogWarning(
+                    context.Exception,
+                    "Internal JWT authentication failed for {Path}",
+                    context.HttpContext.Request.Path);
 
-            return Task.CompletedTask;
-        }
-    };
-})
+                return Task.CompletedTask;
+            }
+        };
+    })
     .AddJwtBearer(EntraScheme, options =>
-{
-    options.Events = new JwtBearerEvents
     {
-        OnAuthenticationFailed = context =>
+        options.Events = new JwtBearerEvents
         {
-            var logger = context.HttpContext.RequestServices
-                .GetRequiredService<ILogger<Program>>();
+            OnAuthenticationFailed = context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILogger<Program>>();
 
-            logger.LogWarning(
-                context.Exception,
-                "Entra JWT authentication failed for {Path}",
-                context.HttpContext.Request.Path);
+                logger.LogWarning(
+                    context.Exception,
+                    "Entra JWT authentication failed for {Path}",
+                    context.HttpContext.Request.Path);
 
-            return Task.CompletedTask;
-        }
-    };
-})
+                return Task.CompletedTask;
+            }
+        };
+    })
     .AddPolicyScheme("smart", "Internal or Entra JWT", options =>
     {
         options.ForwardDefaultSelector = context =>

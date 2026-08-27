@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import { Observable, shareReplay, map } from 'rxjs';
+import { Injectable, inject, signal } from '@angular/core';
+import { Observable, shareReplay, map, tap } from 'rxjs';
 
 interface LoginResponse {
   access_token: string;
@@ -13,17 +13,33 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private token$: Observable<string> | null = null;
 
-  getAccessToken(): Observable<string> {
-    this.token$ ??= this.http
-      .post<LoginResponse>('/api/auth/login', {
-        email: 'test@example.com',
-        password: 'Password123!',
-      })
-      .pipe(
-        map((response) => response.access_token),
-        shareReplay(1)
-      );
+  readonly isAuthenticated = signal(false);
 
+  /** The current session's token stream, or null if nobody has logged in / signed up yet. */
+  getCurrentToken(): Observable<string> | null {
     return this.token$;
+  }
+
+  register(email: string, password: string): Observable<string> {
+    this.token$ = this.requestToken('/api/auth/register', { email, password });
+    return this.token$;
+  }
+
+  login(email: string, password: string): Observable<string> {
+    this.token$ = this.requestToken('/api/auth/login', { email, password });
+    return this.token$;
+  }
+
+  logout(): void {
+    this.token$ = null;
+    this.isAuthenticated.set(false);
+  }
+
+  private requestToken(url: string, body: { email: string; password: string }): Observable<string> {
+    return this.http.post<LoginResponse>(url, body).pipe(
+      map((response) => response.access_token),
+      tap(() => this.isAuthenticated.set(true)),
+      shareReplay(1)
+    );
   }
 }

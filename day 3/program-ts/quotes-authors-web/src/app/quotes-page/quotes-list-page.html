@@ -1,0 +1,43 @@
+@if (auth.isAuthenticated()) {
+  <app-create-quote (created)="loadQuotes()" />
+} @else {
+  <p class="signed-out-notice">
+    <a routerLink="/login">Log in</a> or <a routerLink="/signup">sign up</a> to create a quote.
+  </p>
+}
+
+<hr />
+
+<section class="quotes-page">
+  <h2>Quotes</h2>
+
+  <p class="auth-status">
+    Logged in: {{ auth.isAuthenticated() }}
+    @if (auth.isAuthenticated()) {
+      <button type="button" (click)="logout()">Log out</button>
+    } @else {
+      <a routerLink="/login">Log in</a>
+      <a routerLink="/signup">Sign up</a>
+    }
+  </p>
+
+  @if (loading()) {
+    <p>Loading…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (quotes().length === 0) {
+    <p>No quotes found.</p>
+  } @else {
+    <ul>
+      @for (quote of quotes(); track quote.id) {
+        <li>
+          <a [routerLink]="['/quotes', quote.id]">#{{ quote.id }} — {{ quote.author }}</a>
+        </li>
+      }
+    </ul>
+  }
+</section>
+
+<hr />
+
+<app-author-stats />

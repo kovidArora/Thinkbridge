@@ -1,0 +1,53 @@
+<form class="signup" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+  <h2>Sign up</h2>
+
+  <div class="field">
+    <label for="email">Email</label>
+    <input
+      id="email"
+      type="email"
+      formControlName="email"
+      [attr.aria-invalid]="emailControl.invalid && emailControl.touched ? true : null"
+      [attr.aria-describedby]="emailControl.invalid && emailControl.touched ? 'email-error' : null"
+    />
+    @if (emailControl.invalid && emailControl.touched) {
+      <p id="email-error" class="error" role="alert">
+        @if (emailControl.hasError('required')) {
+          Email is required.
+        } @else if (emailControl.hasError('email')) {
+          Enter a valid email address.
+        }
+      </p>
+    }
+  </div>
+
+  <div class="field">
+    <label for="password">Password</label>
+    <input
+      id="password"
+      type="password"
+      formControlName="password"
+      [attr.aria-invalid]="passwordControl.invalid && passwordControl.touched ? true : null"
+      [attr.aria-describedby]="passwordControl.invalid && passwordControl.touched ? 'password-error' : null"
+    />
+    @if (passwordControl.invalid && passwordControl.touched) {
+      <p id="password-error" class="error" role="alert">
+        @if (passwordControl.hasError('required')) {
+          Password is required.
+        } @else if (passwordControl.hasError('minlength')) {
+          Password must be at least 8 characters.
+        }
+      </p>
+    }
+  </div>
+
+  @if (serverError()) {
+    <p class="error server-error" role="alert">{{ serverError() }}</p>
+  }
+
+  <button type="submit" [disabled]="submitting()">
+    {{ submitting() ? 'Signing up…' : 'Sign up' }}
+  </button>
+
+  <p class="switch">Already have an account? <a routerLink="/login">Log in</a></p>
+</form>

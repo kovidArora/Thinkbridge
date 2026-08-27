@@ -1,0 +1,8 @@
+.quote-detail-page {
+  font-family: system-ui, sans-serif;
+  max-width: 480px;
+}
+
+.error {
+  color: #b00020;
+}

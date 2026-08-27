@@ -1,0 +1,47 @@
+<form class="login" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+  <h2>Log in</h2>
+
+  <div class="field">
+    <label for="email">Email</label>
+    <input
+      id="email"
+      type="email"
+      formControlName="email"
+      [attr.aria-invalid]="emailControl.invalid && emailControl.touched ? true : null"
+      [attr.aria-describedby]="emailControl.invalid && emailControl.touched ? 'login-email-error' : null"
+    />
+    @if (emailControl.invalid && emailControl.touched) {
+      <p id="login-email-error" class="error" role="alert">
+        @if (emailControl.hasError('required')) {
+          Email is required.
+        } @else if (emailControl.hasError('email')) {
+          Enter a valid email address.
+        }
+      </p>
+    }
+  </div>
+
+  <div class="field">
+    <label for="password">Password</label>
+    <input
+      id="password"
+      type="password"
+      formControlName="password"
+      [attr.aria-invalid]="passwordControl.invalid && passwordControl.touched ? true : null"
+      [attr.aria-describedby]="passwordControl.invalid && passwordControl.touched ? 'login-password-error' : null"
+    />
+    @if (passwordControl.invalid && passwordControl.touched) {
+      <p id="login-password-error" class="error" role="alert">Password is required.</p>
+    }
+  </div>
+
+  @if (serverError()) {
+    <p class="error server-error" role="alert">{{ serverError() }}</p>
+  }
+
+  <button type="submit" [disabled]="submitting()">
+    {{ submitting() ? 'Logging in…' : 'Log in' }}
+  </button>
+
+  <p class="switch">Don't have an account? <a routerLink="/signup">Sign up</a></p>
+</form>

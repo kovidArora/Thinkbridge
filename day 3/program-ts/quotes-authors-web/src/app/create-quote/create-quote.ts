@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, signal } from '@angular/core';
+import { Component, ElementRef, inject, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CreateQuoteService } from './create-quote.service';
 import { AppHttpError } from '../core/http/app-http-error';
@@ -17,6 +17,8 @@ export class CreateQuoteComponent {
   protected readonly submitting = signal(false);
   protected readonly serverError = signal<string | null>(null);
   protected readonly success = signal(false);
+
+  readonly created = output<void>();
 
   protected readonly form = this.fb.nonNullable.group({
     author: ['', [Validators.required, Validators.maxLength(200)]],
@@ -48,6 +50,7 @@ export class CreateQuoteComponent {
         this.submitting.set(false);
         this.success.set(true);
         this.form.reset();
+        this.created.emit();
       },
       error: (err: AppHttpError) => {
         this.submitting.set(false);

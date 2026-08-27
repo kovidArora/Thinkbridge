@@ -1,0 +1,17 @@
+<section class="quote-detail-page">
+  <a routerLink="/quotes">&larr; Back to quotes</a>
+  <h2>Quote detail (routed, lazy-loaded, guarded)</h2>
+
+  @if (loading()) {
+    <p>Loading…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (quote(); as q) {
+    <dl>
+      <dt>Id</dt><dd>{{ q.id }}</dd>
+      <dt>Author</dt><dd>{{ q.author }}</dd>
+      <dt>Text</dt><dd>{{ q.text }}</dd>
+      <dt>Published</dt><dd>{{ q.publishedAt }}</dd>
+    </dl>
+  }
+</section>

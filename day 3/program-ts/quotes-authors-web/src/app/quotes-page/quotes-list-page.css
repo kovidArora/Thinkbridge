@@ -1,0 +1,27 @@
+.quotes-page {
+  font-family: system-ui, sans-serif;
+  max-width: 480px;
+}
+
+.quotes-page ul {
+  list-style: none;
+  padding: 0;
+}
+
+.quotes-page li {
+  padding: 0.25rem 0;
+}
+
+.auth-status {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.error {
+  color: #b00020;
+}
+
+.signed-out-notice {
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+}

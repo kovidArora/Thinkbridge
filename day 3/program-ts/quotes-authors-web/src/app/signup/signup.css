@@ -1,0 +1,28 @@
+.signup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 320px;
+  font-family: system-ui, sans-serif;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.field input {
+  padding: 0.4rem;
+  font: inherit;
+}
+
+.error {
+  color: #b00020;
+  margin: 0;
+}
+
+.switch {
+  font-size: 0.85rem;
+  margin: 0;
+}
