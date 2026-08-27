@@ -13,6 +13,12 @@
   justify-content: space-between;
   padding: 0.25rem 0;
   border-bottom: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.author-stats li.selected {
+  background: #eef2ff;
+  font-weight: bold;
 }
 
 .author-stats .error {

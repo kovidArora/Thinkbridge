@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { AuthorStat, AuthorStatsService } from './author-stats.service';
+import { AuthorFilterService } from './author-filter.service';
 
 @Component({
   selector: 'app-author-stats',
@@ -9,6 +10,7 @@ import { AuthorStat, AuthorStatsService } from './author-stats.service';
 })
 export class AuthorStatsComponent {
   private readonly authorStatsService = inject(AuthorStatsService);
+  protected readonly authorFilter = inject(AuthorFilterService);
 
   protected readonly authors = signal<AuthorStat[]>([]);
   protected readonly minQuotes = signal(0);
@@ -40,6 +42,14 @@ export class AuthorStatsComponent {
 
   protected reload(): void {
     this.loadAuthorStats();
+  }
+
+  protected toggleAuthor(author: string): void {
+    if (this.authorFilter.selectedAuthor() === author) {
+      this.authorFilter.clearAuthor();
+    } else {
+      this.authorFilter.selectAuthor(author);
+    }
   }
 
   private loadAuthorStats(): void {

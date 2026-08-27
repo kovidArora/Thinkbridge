@@ -21,15 +21,22 @@
     }
   </p>
 
+  @if (authorFilter.selectedAuthor(); as selected) {
+    <p class="filter-status">
+      Filtered by author: <strong>{{ selected }}</strong>
+      <button type="button" (click)="authorFilter.clearAuthor()">Clear filter</button>
+    </p>
+  }
+
   @if (loading()) {
     <p>Loading…</p>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
-  } @else if (quotes().length === 0) {
+  } @else if (filteredQuotes().length === 0) {
     <p>No quotes found.</p>
   } @else {
     <ul>
-      @for (quote of quotes(); track quote.id) {
+      @for (quote of filteredQuotes(); track quote.id) {
         <li>
           <a [routerLink]="['/quotes', quote.id]">#{{ quote.id }} — {{ quote.author }}</a>
         </li>

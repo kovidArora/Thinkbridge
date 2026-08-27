@@ -24,7 +24,10 @@
 
     <ul>
       @for (author of filteredAuthors(); track author.author) {
-        <li>
+        <li
+          [class.selected]="authorFilter.selectedAuthor() === author.author"
+          (click)="toggleAuthor(author.author)"
+        >
           <span class="name">{{ author.author }}</span>
           <span class="count">
             @switch (true) {
