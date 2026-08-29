@@ -13,5 +13,14 @@
       <dt>Text</dt><dd>{{ q.text }}</dd>
       <dt>Published</dt><dd>{{ q.publishedAt }}</dd>
     </dl>
+
+    @if (auth.isAuthenticated()) {
+      <button type="button" (click)="deleteQuote()" [disabled]="deleting()">
+        {{ deleting() ? 'Deleting…' : 'Delete quote' }}
+      </button>
+      @if (deleteError()) {
+        <p class="error" role="alert">{{ deleteError() }}</p>
+      }
+    }
   }
 </section>

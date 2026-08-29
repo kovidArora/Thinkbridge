@@ -17,4 +17,8 @@ export class QuotesService {
   getQuoteById(id: number): Observable<Quote> {
     return this.http.get<Quote>(`${environment.functionsBaseUrl}/api/quotes/${id}`);
   }
+
+  deleteQuote(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.backendBaseUrl}/api/quotes/${id}`);
+  }
 }
