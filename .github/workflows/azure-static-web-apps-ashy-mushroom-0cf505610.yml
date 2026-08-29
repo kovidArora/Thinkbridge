@@ -19,6 +19,18 @@ jobs:
         with:
           submodules: true
           lfs: false
+      # Oryx's own build script runs an unquoted `chown` on the source path, which breaks
+      # on the space in "day 3" (splits into two nonexistent paths and fails outright).
+      # Building here ourselves sidesteps Oryx entirely; skip_app_build below tells the
+      # deploy action to just upload what's already built instead of invoking Oryx.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install and build Angular app
+        working-directory: "day 3/program-ts/quotes-authors-web"
+        run: |
+          npm ci
+          npm run build -- --configuration production
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -33,6 +45,7 @@ jobs:
           # Web App (quotes-authors-web-api), since Static Web Apps' linked Functions
           # only support Managed Identity on the paid Standard tier.
           output_location: "dist/quotes-authors-web/browser" # Built app content directory - optional
+          skip_app_build: true # We already built it above — Oryx can't handle the space in "day 3"
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
