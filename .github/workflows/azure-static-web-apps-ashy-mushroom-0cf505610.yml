@@ -29,7 +29,9 @@ jobs:
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "day 3/program-ts/quotes-authors-web" # App source code path
-          api_location: "day 3/program-ts/quotes-authors-web/api" # Api source code path - optional
+          # No api_location: the managed-identity API is deployed separately as its own
+          # Web App (quotes-authors-web-api), since Static Web Apps' linked Functions
+          # only support Managed Identity on the paid Standard tier.
           output_location: "dist/quotes-authors-web/browser" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
 
