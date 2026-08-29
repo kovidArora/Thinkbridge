@@ -33,7 +33,11 @@
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else if (filteredQuotes().length === 0) {
-    <p>No quotes found.</p>
+    @if (authorFilter.selectedAuthor(); as selected) {
+      <p>No quotes by {{ selected }} in the currently loaded page — this list only shows page 1 (20 quotes), so they may still have quotes on later pages.</p>
+    } @else {
+      <p>No quotes found.</p>
+    }
   } @else {
     <ul>
       @for (quote of filteredQuotes(); track quote.id) {

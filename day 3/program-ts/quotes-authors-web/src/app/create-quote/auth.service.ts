@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, shareReplay, map, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 interface LoginResponse {
   access_token: string;
@@ -21,12 +22,12 @@ export class AuthService {
   }
 
   register(email: string, password: string): Observable<string> {
-    this.token$ = this.requestToken('/api/auth/register', { email, password });
+    this.token$ = this.requestToken(`${environment.backendBaseUrl}/api/auth/register`, { email, password });
     return this.token$;
   }
 
   login(email: string, password: string): Observable<string> {
-    this.token$ = this.requestToken('/api/auth/login', { email, password });
+    this.token$ = this.requestToken(`${environment.backendBaseUrl}/api/auth/login`, { email, password });
     return this.token$;
   }
 
