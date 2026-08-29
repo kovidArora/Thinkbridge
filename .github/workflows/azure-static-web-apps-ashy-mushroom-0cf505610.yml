@@ -31,6 +31,7 @@ jobs:
         run: |
           npm ci
           npm run build -- --configuration production
+          cp staticwebapp.config.json dist/quotes-authors-web/browser/
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -40,11 +41,13 @@ jobs:
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "day 3/program-ts/quotes-authors-web" # App source code path
+          # With skip_app_build, the action looks for index.html directly at app_location
+          # (it ignores output_location in this mode) — so app_location points straight
+          # at the already-built folder from the step above.
+          app_location: "day 3/program-ts/quotes-authors-web/dist/quotes-authors-web/browser"
           # No api_location: the managed-identity API is deployed separately as its own
           # Web App (quotes-authors-web-api), since Static Web Apps' linked Functions
           # only support Managed Identity on the paid Standard tier.
-          output_location: "dist/quotes-authors-web/browser" # Built app content directory - optional
           skip_app_build: true # We already built it above — Oryx can't handle the space in "day 3"
           ###### End of Repository/Build Configurations ######
 
