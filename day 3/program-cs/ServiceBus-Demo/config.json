@@ -1,0 +1,39 @@
+{
+  "UserConfig": {
+    "Namespaces": [
+      {
+        "Name": "sbemulatorns",
+        "Queues": [],
+        "Topics": [
+          {
+            "Name": "orders",
+            "Properties": {
+              "DefaultMessageTimeToLive": "PT1H"
+            },
+            "Subscriptions": [
+              {
+                "Name": "audit-sub",
+                "Properties": {
+                  "DefaultMessageTimeToLive": "PT1H",
+                  "LockDuration": "PT30S",
+                  "MaxDeliveryCount": 10
+                }
+              },
+              {
+                "Name": "processing-sub",
+                "Properties": {
+                  "DefaultMessageTimeToLive": "PT1H",
+                  "LockDuration": "PT30S",
+                  "MaxDeliveryCount": 3
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "Logging": {
+      "Type": "File"
+    }
+  }
+}

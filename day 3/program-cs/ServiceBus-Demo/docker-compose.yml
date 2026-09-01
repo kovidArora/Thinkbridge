@@ -1,0 +1,29 @@
+services:
+  sqledge:
+    container_name: sbemulator-sqledge
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "P@ssw0rd-Emulator1"
+    networks:
+      - sb-emulator
+
+  emulator:
+    container_name: sbemulator
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    volumes:
+      - "./config.json:/ServiceBus_Emulator/ConfigFiles/Config.json"
+    ports:
+      - "5672:5672"
+      - "5300:5300"
+    environment:
+      ACCEPT_EULA: "Y"
+      SQL_SERVER: sbemulator-sqledge
+      MSSQL_SA_PASSWORD: "P@ssw0rd-Emulator1"
+    depends_on:
+      - sqledge
+    networks:
+      - sb-emulator
+
+networks:
+  sb-emulator:
