@@ -3,7 +3,16 @@
     "Namespaces": [
       {
         "Name": "sbemulatorns",
-        "Queues": [],
+        "Queues": [
+          {
+            "Name": "outbox-relay",
+            "Properties": {
+              "DefaultMessageTimeToLive": "PT1H",
+              "LockDuration": "PT30S",
+              "MaxDeliveryCount": 5
+            }
+          }
+        ],
         "Topics": [
           {
             "Name": "orders",
