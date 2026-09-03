@@ -17,6 +17,7 @@ using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.Extensions.Options;
 using QuotesApi;
 using QuotesApi.Options;
+using Microsoft.Extensions.Caching.Hybrid;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +50,24 @@ if (!string.IsNullOrEmpty(appInsightsConnectionString))
 }
 
 builder.Services.AddEntraMetadataClient();
+
+builder.Services.AddSingleton<AuthorStatsQueryMetrics>();
+
+// Redis is the HybridCache's L2 (distributed) store; HybridCache's own
+// in-process L1 (memory) sits in front of it automatically once both are
+// registered — no extra wiring needed to get the two-tier behavior.
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+});
+builder.Services.AddHybridCache(options =>
+{
+    options.DefaultEntryOptions = new()
+    {
+        Expiration = TimeSpan.FromSeconds(30),
+        LocalCacheExpiration = TimeSpan.FromSeconds(30),
+    };
+});
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();

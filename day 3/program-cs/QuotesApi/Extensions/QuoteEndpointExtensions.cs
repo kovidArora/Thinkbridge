@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.IdentityModel.Tokens;
+using QuotesApi;
 using QuotesApi.Commands;
 using QuotesApi.Data;
 using QuotesApi.Models;
@@ -65,11 +67,31 @@ public static class QuoteEndpointExtensions
 
         app.MapGet("/api/authors/stats", async (
             IQuoteRepository repository,
+            HybridCache cache,
+            bool? noCache,
             CancellationToken cancellationToken) =>
         {
-            var stats = await repository.GetAuthorStatsAsync(cancellationToken);
+            // noCache exists only to get an honest "without caching" baseline
+            // for load testing against the exact same endpoint/code path.
+            var stats = noCache == true
+                ? await repository.GetAuthorStatsAsync(cancellationToken)
+                : await cache.GetOrCreateAsync(
+                    "authors:stats",
+                    async ct => await repository.GetAuthorStatsAsync(ct),
+                    cancellationToken: cancellationToken);
 
             return Results.Ok(stats);
+        });
+
+        app.MapGet("/api/debug/author-stats-metrics", (AuthorStatsQueryMetrics metrics) =>
+            Results.Ok(new { dbQueryCount = metrics.DbQueryCount }));
+
+        // Load-test-only: force a cold cache key on demand instead of waiting
+        // out the real TTL, so a stampede test starts from a known state.
+        app.MapPost("/api/debug/author-stats-cache/evict", async (HybridCache cache, CancellationToken cancellationToken) =>
+        {
+            await cache.RemoveAsync("authors:stats", cancellationToken);
+            return Results.NoContent();
         });
 
         app.MapGet("/api/quotes/{id:int}", async (
@@ -93,7 +115,7 @@ public static class QuoteEndpointExtensions
             CancellationToken cancellationToken) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
+            
             if (!int.TryParse(userIdClaim, out var userId))
             {
                 return Results.Unauthorized();
@@ -102,7 +124,6 @@ public static class QuoteEndpointExtensions
             var (quote, error) = await commandHandler.HandleAsync(
                 new CreateQuoteCommand(request.Author, request.Text, userId),
                 cancellationToken);
-
             if (quote is null)
             {
                 var field = error!.StartsWith("Text", StringComparison.Ordinal) ? "text" : "author";

@@ -8,13 +8,16 @@ public class QuoteRepository : IQuoteRepository
 {
     private readonly QuotesDbContext _db;
     private readonly ILogger<QuoteRepository> _logger;
+    private readonly AuthorStatsQueryMetrics _authorStatsMetrics;
 
     public QuoteRepository(
         QuotesDbContext db,
-        ILogger<QuoteRepository> logger)
+        ILogger<QuoteRepository> logger,
+        AuthorStatsQueryMetrics authorStatsMetrics)
     {
     _db = db;
     _logger = logger;
+    _authorStatsMetrics = authorStatsMetrics;
     }
 
 public async Task<List<Quote>> GetQuotesAsync(
@@ -67,6 +70,8 @@ public async Task<bool> DeleteAsync(
 }
 public async Task<List<AuthorStatsDto>> GetAuthorStatsAsync(CancellationToken cancellationToken)
 {
+    _authorStatsMetrics.RecordDbQuery();
+
     return await _db.Quotes
         .AsNoTracking()
         .Where(q => !q.IsDeleted)
