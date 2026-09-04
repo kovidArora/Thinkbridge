@@ -92,12 +92,20 @@ public static class ResilientHttpClientExtensions
                     BreakDuration = options.CircuitBreakerBreakDuration,
                     OnOpened = args =>
                     {
-                        logger.LogError("Circuit breaker opened for entra-metadata client");
+                        logger.LogError(
+                            "Circuit breaker OPENED for entra-metadata client; will stay open for {BreakDuration}ms, reason: {Reason}",
+                            args.BreakDuration.TotalMilliseconds,
+                            args.Outcome.Exception?.Message ?? args.Outcome.Result?.StatusCode.ToString());
+                        return ValueTask.CompletedTask;
+                    },
+                    OnHalfOpened = args =>
+                    {
+                        logger.LogWarning("Circuit breaker HALF-OPEN for entra-metadata client — testing with the next call");
                         return ValueTask.CompletedTask;
                     },
                     OnClosed = args =>
                     {
-                        logger.LogInformation("Circuit breaker closed for entra-metadata client — recovered");
+                        logger.LogInformation("Circuit breaker CLOSED for entra-metadata client — recovered");
                         return ValueTask.CompletedTask;
                     }
                 });

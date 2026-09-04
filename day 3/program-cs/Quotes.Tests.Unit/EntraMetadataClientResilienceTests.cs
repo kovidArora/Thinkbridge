@@ -180,7 +180,7 @@ public class EntraMetadataClientResilienceTests
         }
 
         opened.Should().BeTrue("sustained failures should have opened the circuit");
-        loggerProvider.Lines.Should().Contain(l => l.Contains("Circuit breaker opened"));
+        loggerProvider.Lines.Should().Contain(l => l.Contains("OPENED"));
 
         // While open, the underlying handler should not even be called.
         var callCountAtOpen = fakeHandler.CallCount;
@@ -188,13 +188,21 @@ public class EntraMetadataClientResilienceTests
             .Should().ThrowAsync<BrokenCircuitException>();
         fakeHandler.CallCount.Should().Be(callCountAtOpen, "the handler must not be reached while the circuit is open");
 
-        // Recovery: fix the dependency, wait past BreakDuration, confirm it closes again.
+        // Recovery: fix the dependency, wait past BreakDuration, confirm it
+        // probes (half-open) then closes again.
         fakeHandler.Fail = false;
         await Task.Delay(TimeSpan.FromMilliseconds(600));
 
         var result = await client.GetOpenIdConfigurationAsync(CancellationToken.None);
         result.Should().Contain("issuer");
-        loggerProvider.Lines.Should().Contain(l => l.Contains("Circuit breaker closed"));
+        loggerProvider.Lines.Should().Contain(l => l.Contains("HALF-OPEN"));
+        loggerProvider.Lines.Should().Contain(l => l.Contains("CLOSED"));
+
+        Console.WriteLine("=== Captured resilience log lines ===");
+        foreach (var line in loggerProvider.Lines)
+        {
+            Console.WriteLine(line);
+        }
     }
 
     [Fact]
