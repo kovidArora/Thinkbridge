@@ -25,3 +25,11 @@ param sqlAdminPassword = readEnvironmentVariable('SQL_ADMIN_PASSWORD')
 // separate from dev's.
 
 param deployServiceBus = false
+
+// Same pattern as sqlAdminPassword — read at deploy time, never stored here:
+//   $env:INTERNAL_JWT_SIGNING_KEY = "..."; azd provision
+param internalJwtSigningKey = readEnvironmentVariable('INTERNAL_JWT_SIGNING_KEY')
+
+// Not secret — matches appsettings.json's Entra section exactly.
+param entraTenantId = '74c0f8e6-65d8-427e-839e-aa716fee2987'
+param entraAudience = 'api://bfea74ae-77f5-474a-bed6-a3de4d9ef099'

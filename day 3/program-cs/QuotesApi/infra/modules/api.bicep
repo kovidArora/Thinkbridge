@@ -37,6 +37,12 @@ param existingEnvironmentId string = ''
 @description('Resource id of the container registry the image is pulled from — used to grant the Container App AcrPull rights so it can actually pull the image, without a registry password.')
 param containerRegistryId string
 
+@description('Resource id of the Key Vault holding the internal JWT signing key — used to grant read access to that one secret. Leave empty to skip Key Vault wiring (e.g. before the vault exists yet).')
+param keyVaultId string = ''
+
+@description('Key Vault URI (from modules/keyvault.bicep), used to build the Container App secret reference. Leave empty together with keyVaultId.')
+param keyVaultUri string = ''
+
 var containerAppName = 'ca-quotes-api-${environmentName}'
 var environmentAppName = 'cae-quotes-${environmentName}'
 var logAnalyticsName = 'log-quotes-${environmentName}'
@@ -104,6 +110,40 @@ resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' 
   }
 }
 
+var hasKeyVault = !empty(keyVaultId)
+
+// Key Vault Secrets User (built-in role) — read-only access to secret
+// values, nothing else. Granted to the same user-assigned identity used for
+// AcrPull, for the same reason: its principal id exists before the
+// Container App resource does, so the role is in place before the app's
+// first revision tries to resolve the secretRef below.
+var keyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
+
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = if (hasKeyVault) {
+  name: last(split(keyVaultId, '/'))
+}
+
+resource keyVaultSecretsUserAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (hasKeyVault) {
+  name: guid(keyVaultId, pullIdentity.id, keyVaultSecretsUserRoleId)
+  scope: keyVault
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsUserRoleId)
+    principalId: pullIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Every app setting the container actually needs, appended to the caller's
+// non-secret appSettings — the JWT signing key is the only one backed by a
+// real value, and even that never appears here, only a pointer (secretRef)
+// to the name declared in configuration.secrets below.
+var containerEnv = hasKeyVault ? concat(appSettings, [
+  {
+    name: 'Jwt__Key'
+    secretRef: 'internal-jwt-signing-key'
+  }
+]) : appSettings
+
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
   location: location
@@ -130,6 +170,13 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
           identity: pullIdentity.id
         }
       ]
+      secrets: hasKeyVault ? [
+        {
+          name: 'internal-jwt-signing-key'
+          keyVaultUrl: '${keyVaultUri}secrets/internal-jwt-signing-key'
+          identity: pullIdentity.id
+        }
+      ] : []
     }
     template: {
       containers: [
@@ -140,7 +187,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             cpu: json(cpuCores)
             memory: memorySize
           }
-          env: appSettings
+          env: containerEnv
         }
       ]
       scale: {
@@ -151,6 +198,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
   dependsOn: [
     acrPullAssignment
+    keyVaultSecretsUserAssignment
   ]
 }
 

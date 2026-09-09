@@ -14,6 +14,9 @@
     "containerRegistryId": { "value": "${CONTAINER_REGISTRY_ID}" },
     "sqlAdminLogin": { "value": "${SQL_ADMIN_LOGIN}" },
     "sqlAdminPassword": { "value": "${SQL_ADMIN_PASSWORD}" },
-    "deployServiceBus": { "value": false }
+    "deployServiceBus": { "value": false },
+    "internalJwtSigningKey": { "value": "${INTERNAL_JWT_SIGNING_KEY}" },
+    "entraTenantId": { "value": "${ENTRA_TENANT_ID}" },
+    "entraAudience": { "value": "${ENTRA_AUDIENCE}" }
   }
 }

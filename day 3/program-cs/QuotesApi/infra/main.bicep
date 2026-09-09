@@ -36,6 +36,16 @@ param existingApiEnvironmentId string = ''
 @description('Resource id of the container registry the API image is pulled from.')
 param containerRegistryId string
 
+@secure()
+@description('Signing key for the "Internal" JWT auth scheme — the one app secret with no Managed Identity equivalent, stored in Key Vault and never passed to the app as a plain env value.')
+param internalJwtSigningKey string
+
+@description('Entra (Azure AD) tenant id used to validate Entra-issued tokens — not a secret, matches appsettings.json.')
+param entraTenantId string
+
+@description('Entra (Azure AD) application audience used to validate Entra-issued tokens — not a secret, matches appsettings.json.')
+param entraAudience string
+
 @description('SQL Server admin login.')
 param sqlAdminLogin string
 
@@ -48,6 +58,46 @@ param deployServiceBus bool = false
 
 @description('Service Bus SKU — must be Standard or higher; topics are not available on Basic. Only used if deployServiceBus is true.')
 param serviceBusSkuName string = 'Standard'
+
+// Computed from the exact same naming expressions modules/sql.bicep and
+// modules/servicebus.bicep use — deterministic, so the API's connection
+// settings can be built here without waiting on those modules' outputs
+// (which would create a circular module dependency, since both of those
+// modules depend on the API's identity in the other direction).
+// environment().suffixes.sqlServerHostname already includes its own leading
+// dot (e.g. ".database.windows.net") — a real bug caught here the first time
+// this deployed, producing a double dot in the FQDN.
+var sqlServerFqdn = 'sql-quotes-${environmentName}-${uniqueString(resourceGroup().id)}${environment().suffixes.sqlServerHostname}'
+var sqlDatabaseName = 'quotes-${environmentName}'
+var serviceBusNamespaceHost = 'sb-quotes-${environmentName}-${uniqueString(resourceGroup().id)}.servicebus.windows.net'
+
+// No password, no connection-string secret: Authentication=Active Directory
+// Default makes Microsoft.Data.SqlClient fetch a token via the Container
+// App's managed identity at connect time — the same identity granted SQL
+// AAD admin rights in modules/sql.bicep.
+var sqlConnectionString = 'Server=tcp:${sqlServerFqdn},1433;Database=${sqlDatabaseName};Authentication=Active Directory Default;Encrypt=True;'
+
+var baseAppSettings = [
+  { name: 'ConnectionStrings__DefaultConnection', value: sqlConnectionString }
+  { name: 'Entra__TenantId', value: entraTenantId }
+  { name: 'Entra__Audience', value: entraAudience }
+]
+
+// Only set when Service Bus is actually deployed — DefaultAzureCredential
+// plus this namespace host is all the app needs, no connection string,
+// same principle as SQL above.
+var appSettingsWithServiceBus = deployServiceBus
+  ? concat(baseAppSettings, [{ name: 'ServiceBus__Namespace', value: serviceBusNamespaceHost }])
+  : baseAppSettings
+
+module keyVault 'modules/keyvault.bicep' = {
+  name: 'keyvault-${environmentName}'
+  params: {
+    environmentName: environmentName
+    location: location
+    internalJwtSigningKey: internalJwtSigningKey
+  }
+}
 
 module api 'modules/api.bicep' = {
   name: 'api-${environmentName}'
@@ -62,6 +112,9 @@ module api 'modules/api.bicep' = {
     createNewEnvironment: createNewApiEnvironment
     existingEnvironmentId: existingApiEnvironmentId
     containerRegistryId: containerRegistryId
+    keyVaultId: keyVault.outputs.vaultId
+    keyVaultUri: keyVault.outputs.vaultUri
+    appSettings: appSettingsWithServiceBus
   }
 }
 
