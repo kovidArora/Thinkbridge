@@ -18,11 +18,17 @@ param sqlAdminLogin string
 @description('SQL Server admin password. Pass via --parameters sqlAdminPassword=$env:SQL_ADMIN_PASSWORD at deploy time, never committed in a params file.')
 param sqlAdminPassword string
 
-@description('Database SKU name, e.g. Basic (dev) or S1/GP_Gen5_2 (prod).')
-param skuName string
+@description('Database SKU name — General Purpose Serverless (GP_S_Gen5) for both dev and prod, so both can use the Azure SQL free offer (useFreeLimit below) instead of either one costing real money.')
+param skuName string = 'GP_S_Gen5'
 
-@description('Database SKU tier, e.g. Basic or Standard.')
-param skuTier string
+@description('Database SKU tier — must be GeneralPurpose to use the free offer.')
+param skuTier string = 'GeneralPurpose'
+
+@description('Serverless vCores (0.5-4 for the free-offer-eligible range).')
+param vCores int = 1
+
+@description('Minutes of inactivity before serverless auto-pauses (minimum 60) — reduces compute usage against the free monthly grant even further.')
+param autoPauseDelayMinutes int = 60
 
 @description('Principal id of the API managed identity, granted db_datareader/db_datawriter via AAD auth instead of a connection-string password.')
 param apiPrincipalId string
@@ -65,10 +71,24 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
   sku: {
     name: skuName
     tier: skuTier
+    family: 'Gen5'
+    capacity: vCores
   }
   properties: {
     // Dev can be thrown away; prod gets real geo-redundant backups.
-    requestedBackupStorageRedundancy: environmentName == 'prod' ? 'Geo' : 'Local'
+    // The free-limit offer (useFreeLimit below) only allows Local backup
+    // storage redundancy, even for prod — Geo is rejected outright
+    // (ProvisioningDisabled), so this can't vary by environment here.
+    requestedBackupStorageRedundancy: 'Local'
+    minCapacity: json('0.5')
+    autoPauseDelay: autoPauseDelayMinutes
+    // The actual free-offer opt-in: up to 10 serverless databases per
+    // subscription get 100,000 free vCore-seconds + 32GB storage/month,
+    // forever, no expiration. AutoPause (not BillOverUsage) means this can
+    // never incur a real charge even if the monthly grant is exceeded —
+    // it just pauses until next month instead of billing.
+    useFreeLimit: true
+    freeLimitExhaustionBehavior: 'AutoPause'
   }
 }
 

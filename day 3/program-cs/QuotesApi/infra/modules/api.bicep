@@ -34,6 +34,9 @@ param createNewEnvironment bool = true
 @description('Resource id of an existing Container Apps Environment to deploy into when createNewEnvironment is false.')
 param existingEnvironmentId string = ''
 
+@description('Resource id of the container registry the image is pulled from — used to grant the Container App AcrPull rights so it can actually pull the image, without a registry password.')
+param containerRegistryId string
+
 var containerAppName = 'ca-quotes-api-${environmentName}'
 var environmentAppName = 'cae-quotes-${environmentName}'
 var logAnalyticsName = 'log-quotes-${environmentName}'
@@ -70,13 +73,49 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' 
 
 var environmentId = createNewEnvironment ? containerAppEnvironment.id : existingEnvironmentId
 
+// AcrPull role definition id (built-in, same across all subscriptions).
+var acrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
+
+// User-assigned identity: created as its own resource, so its principal id
+// exists (and can be granted AcrPull) *before* the Container App resource is
+// even declared. A system-assigned identity's principal id only exists once
+// the Container App itself is created — but the platform tries to pull the
+// image as part of that same creation, so granting AcrPull afterwards is too
+// late (the exact chicken-and-egg failure this module used to hit).
+resource pullIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: 'id-quotes-api-${environmentName}'
+  location: location
+}
+
+// Registry is assumed to live in this same resource group (true for the real
+// cr33kewg57w25su registry) — required so this can be declared `existing`
+// and take a role assignment as a child/extension resource.
+resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
+  name: last(split(containerRegistryId, '/'))
+}
+
+resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(acr.id, pullIdentity.id, acrPullRoleId)
+  scope: acr
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleId)
+    principalId: pullIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
   location: location
   identity: {
-    // System-assigned identity: no client secret needed to reach SQL/Service
-    // Bus below — same principle already proven for the real MI proxy.
-    type: 'SystemAssigned'
+    // Both identities: the user-assigned one exists early enough to pull the
+    // image (see above); system-assigned is what SQL/Service Bus grant
+    // access to below, kept separate so those role assignments don't need
+    // to know about the registry concern at all.
+    type: 'SystemAssigned, UserAssigned'
+    userAssignedIdentities: {
+      '${pullIdentity.id}': {}
+    }
   }
   properties: {
     managedEnvironmentId: environmentId
@@ -85,6 +124,12 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         external: true
         targetPort: 8080
       }
+      registries: [
+        {
+          server: acr.properties.loginServer
+          identity: pullIdentity.id
+        }
+      ]
     }
     template: {
       containers: [
@@ -104,6 +149,9 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       }
     }
   }
+  dependsOn: [
+    acrPullAssignment
+  ]
 }
 
 @description('The system-assigned identity principal id — grant this access to SQL/Service Bus separately.')

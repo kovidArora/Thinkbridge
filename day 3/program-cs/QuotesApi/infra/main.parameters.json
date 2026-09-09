@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": { "value": "${AZURE_ENV_NAME}" },
+    "location": { "value": "${AZURE_LOCATION}" },
+    "containerImage": { "value": "${CONTAINER_IMAGE}" },
+    "apiCpuCores": { "value": "${API_CPU_CORES}" },
+    "apiMemorySize": { "value": "${API_MEMORY_SIZE}" },
+    "apiMinReplicas": { "value": "${API_MIN_REPLICAS}" },
+    "apiMaxReplicas": { "value": "${API_MAX_REPLICAS}" },
+    "createNewApiEnvironment": { "value": false },
+    "existingApiEnvironmentId": { "value": "${EXISTING_API_ENVIRONMENT_ID}" },
+    "containerRegistryId": { "value": "${CONTAINER_REGISTRY_ID}" },
+    "sqlAdminLogin": { "value": "${SQL_ADMIN_LOGIN}" },
+    "sqlAdminPassword": { "value": "${SQL_ADMIN_PASSWORD}" },
+    "deployServiceBus": { "value": false }
+  }
+}

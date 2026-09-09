@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+# Standalone azd project for THIS Bicep IaC exercise only — deliberately
+# separate from ../azure.yaml (which manages the real, live quotes-api
+# deployment) so nothing here can affect it. Its own azd environments
+# ("dev", "prod") and its own .azure/ state live entirely under this folder.
+name: quotes-infra-stacks
+infra:
+  path: .
+  module: main

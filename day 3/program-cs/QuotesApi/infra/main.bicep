@@ -33,6 +33,9 @@ param createNewApiEnvironment bool = true
 @description('Resource id of the existing Environment to reuse when createNewApiEnvironment is false.')
 param existingApiEnvironmentId string = ''
 
+@description('Resource id of the container registry the API image is pulled from.')
+param containerRegistryId string
+
 @description('SQL Server admin login.')
 param sqlAdminLogin string
 
@@ -40,14 +43,11 @@ param sqlAdminLogin string
 @description('SQL Server admin password — always pass this at deploy time (CLI --parameters or a secure pipeline variable), never store it in a params file.')
 param sqlAdminPassword string
 
-@description('SQL Database SKU name.')
-param sqlSkuName string
+@description('Set true to actually deploy Service Bus — left false by default since topics require the paid Standard tier with no free option, unlike the API and SQL pieces (both free-eligible). The module stays fully written and what-if-validated either way.')
+param deployServiceBus bool = false
 
-@description('SQL Database SKU tier.')
-param sqlSkuTier string
-
-@description('Service Bus SKU — must be Standard or higher; topics are not available on Basic.')
-param serviceBusSkuName string
+@description('Service Bus SKU — must be Standard or higher; topics are not available on Basic. Only used if deployServiceBus is true.')
+param serviceBusSkuName string = 'Standard'
 
 module api 'modules/api.bicep' = {
   name: 'api-${environmentName}'
@@ -61,6 +61,7 @@ module api 'modules/api.bicep' = {
     maxReplicas: apiMaxReplicas
     createNewEnvironment: createNewApiEnvironment
     existingEnvironmentId: existingApiEnvironmentId
+    containerRegistryId: containerRegistryId
   }
 }
 
@@ -71,13 +72,11 @@ module sql 'modules/sql.bicep' = {
     location: location
     sqlAdminLogin: sqlAdminLogin
     sqlAdminPassword: sqlAdminPassword
-    skuName: sqlSkuName
-    skuTier: sqlSkuTier
     apiPrincipalId: api.outputs.principalId
   }
 }
 
-module serviceBus 'modules/servicebus.bicep' = {
+module serviceBus 'modules/servicebus.bicep' = if (deployServiceBus) {
   name: 'servicebus-${environmentName}'
   params: {
     environmentName: environmentName
@@ -93,5 +92,5 @@ output apiUrl string = api.outputs.apiUrl
 @description('The SQL server hostname, for building the app connection string.')
 output sqlServerFqdn string = sql.outputs.sqlServerFqdn
 
-@description('The Service Bus namespace hostname, for AAD-based SDK connections (no connection string).')
-output serviceBusHost string = serviceBus.outputs.serviceBusNamespaceHost
+@description('The Service Bus namespace hostname, empty when deployServiceBus is false.')
+output serviceBusHost string = serviceBus.?outputs.serviceBusNamespaceHost ?? ''
