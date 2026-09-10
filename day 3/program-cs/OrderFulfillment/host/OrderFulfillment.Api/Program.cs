@@ -1,13 +1,29 @@
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Inventory.Application;
 using Microsoft.EntityFrameworkCore;
 using Ordering.Application;
 using Ordering.Domain;
 using Ordering.Infrastructure;
 using OrderFulfillment.Api;
+using OpenTelemetry.Trace;
 using SharedKernel;
 using Shipping.Application;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// --- Observability: ASP.NET Core + HttpClient + SqlClient spans come from
+// UseAzureMonitor() itself; EF Core needs its own instrumentation added
+// explicitly, and the outbox dispatcher's manual spans (see
+// OutboxDispatcherBackgroundService) need their ActivitySource registered
+// or the SDK would silently drop them. Reads the connection string from
+// config (APPLICATIONINSIGHTS_CONNECTION_STRING / user-secrets locally) —
+// never hardcoded, and it's not a secret that grants access to anything,
+// only somewhere to send data.
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing
+        .AddSource(OutboxDispatcherBackgroundService.ActivitySource.Name)
+        .AddEntityFrameworkCoreInstrumentation())
+    .UseAzureMonitor();
 
 // --- Ordering: the only module with real EF-backed persistence in this scaffold ---
 builder.Services.AddDbContext<OrderingDbContext>(options => options.UseSqlite("Data Source=orderfulfillment.db"));

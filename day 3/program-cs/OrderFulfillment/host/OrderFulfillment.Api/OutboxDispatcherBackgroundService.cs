@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Ordering.Domain;
@@ -17,6 +18,11 @@ public class OutboxDispatcherBackgroundService(
     IServiceProvider services,
     ILogger<OutboxDispatcherBackgroundService> logger) : BackgroundService
 {
+    // Name registered with the OpenTelemetry tracer in Program.cs
+    // (AddSource) — a BackgroundService has no ambient Activity of its own
+    // the way an HTTP request does, so spans have to be started explicitly.
+    public static readonly ActivitySource ActivitySource = new("OrderFulfillment.Worker");
+
     private static readonly Dictionary<string, Type> EventTypesByName = new()
     {
         [nameof(OrderPlaced)] = typeof(OrderPlaced),
@@ -66,6 +72,13 @@ public class OutboxDispatcherBackgroundService(
                 continue;
             }
 
+            // Resumes the trace the original HTTP request started (see
+            // OutboxMessage.TraceParent) instead of starting an unrelated
+            // one — this span, and every DB/dependency call nested under it
+            // via dispatcher.PublishAsync, shows up as part of that same
+            // end-to-end trace in Application Insights.
+            using var activity = StartDispatchActivity(message);
+
             var @event = (IntegrationEvent)JsonSerializer.Deserialize(message.Payload, eventType)!;
             await dispatcher.PublishAsync(@event, cancellationToken);
 
@@ -74,5 +87,18 @@ public class OutboxDispatcherBackgroundService(
         }
 
         return pending.Count;
+    }
+
+    private static Activity? StartDispatchActivity(OutboxMessage message)
+    {
+        var parentContext = !string.IsNullOrEmpty(message.TraceParent)
+            && ActivityContext.TryParse(message.TraceParent, traceState: null, out var parsed)
+                ? parsed
+                : default;
+
+        return ActivitySource.StartActivity(
+            $"outbox.dispatch {message.Type}",
+            ActivityKind.Consumer,
+            parentContext);
     }
 }
