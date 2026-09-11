@@ -1,5 +1,5 @@
 @if (auth.isAuthenticated()) {
-  <app-create-quote (created)="loadQuotes(); authorStats.reload()" />
+  <app-create-quote (created)="reload(); authorStats.reload()" />
 } @else {
   <p class="signed-out-notice">
     <a routerLink="/login">Log in</a> or <a routerLink="/signup">sign up</a> to create a quote.
@@ -32,21 +32,27 @@
     <p>Loading…</p>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
-  } @else if (filteredQuotes().length === 0) {
+  } @else if (quotes().length === 0) {
     @if (authorFilter.selectedAuthor(); as selected) {
-      <p>No quotes by {{ selected }} in the currently loaded page — this list only shows page 1 (20 quotes), so they may still have quotes on later pages.</p>
+      <p>No quotes by {{ selected }}.</p>
     } @else {
       <p>No quotes found.</p>
     }
   } @else {
     <ul>
-      @for (quote of filteredQuotes(); track quote.id) {
+      @for (quote of quotes(); track quote.id) {
         <li>
           <a [routerLink]="['/quotes', quote.id]">#{{ quote.id }} — {{ quote.author }}</a>
         </li>
       }
     </ul>
   }
+
+  <p class="pagination">
+    <button type="button" (click)="previousPage()" [disabled]="page() === 1">← Previous</button>
+    Page {{ page() }}
+    <button type="button" (click)="nextPage()" [disabled]="!hasNextPage()">Next →</button>
+  </p>
 </section>
 
 <hr />

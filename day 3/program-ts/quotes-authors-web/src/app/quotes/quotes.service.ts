@@ -8,9 +8,9 @@ import { environment } from '../../environments/environment';
 export class QuotesService {
   private readonly http = inject(HttpClient);
 
-  getQuotes(page: number, size: number): Observable<Quote[]> {
+  getQuotes(page: number, size: number, author?: string | null): Observable<Quote[]> {
     return this.http.get<Quote[]>(`${environment.functionsBaseUrl}/api/quotes`, {
-      params: { page, size },
+      params: author ? { page, size, author } : { page, size },
     });
   }
 

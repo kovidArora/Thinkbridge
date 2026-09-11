@@ -24,6 +24,7 @@ public static class QuoteEndpointExtensions
         app.MapGet("/api/quotes", async (
             int page,
             int size,
+            string? author,
             IQuoteRepository repository,
             CancellationToken cancellationToken) =>
         {
@@ -34,7 +35,7 @@ public static class QuoteEndpointExtensions
                     ["page"] = ["Page must be greater than 0."]
                 });
             }
- 
+
             if (size < 1)
             {
                 return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -42,12 +43,13 @@ public static class QuoteEndpointExtensions
                     ["size"] = ["Size must be greater than 0."]
                 });
             }
- 
+
             var quotes = await repository.GetQuotesAsync(
                 page,
                 size,
+                author,
                 cancellationToken);
- 
+
             return Results.Ok(quotes);
         });
  

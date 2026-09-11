@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map, switchMap, catchError, of, tap } from 'rxjs';
@@ -8,7 +9,7 @@ import { AuthService } from '../create-quote/auth.service';
 
 @Component({
   selector: 'app-quote-detail-page',
-  imports: [RouterLink],
+  imports: [RouterLink, CommonModule],
   templateUrl: './quote-detail-page.html',
   styleUrl: './quote-detail-page.css',
 })

@@ -3,6 +3,12 @@
   max-width: 480px;
 }
 
+.back-link {
+  display: block;
+  text-align: left;
+  margin-bottom: 0.75rem;
+}
+
 .error {
   color: #b00020;
 }

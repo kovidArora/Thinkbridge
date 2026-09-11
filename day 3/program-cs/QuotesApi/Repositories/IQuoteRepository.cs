@@ -11,6 +11,7 @@ public interface IQuoteRepository
     Task<List<Quote>> GetQuotesAsync(
         int page,
         int size,
+        string? author,
         CancellationToken cancellationToken);
 
     Task<List<AuthorStatsDto>> GetAuthorStatsAsync(

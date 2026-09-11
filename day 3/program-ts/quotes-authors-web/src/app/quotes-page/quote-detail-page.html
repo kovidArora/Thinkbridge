@@ -1,6 +1,6 @@
 <section class="quote-detail-page">
-  <a routerLink="/quotes">&larr; Back to quotes</a>
-  <h2>Quote detail (routed, lazy-loaded, guarded)</h2>
+  <a routerLink="/quotes" class="back-link">&larr; Back to quotes</a>
+  <h2>Quote details</h2>
 
   @if (loading()) {
     <p>Loading…</p>
@@ -11,7 +11,7 @@
       <dt>Id</dt><dd>{{ q.id }}</dd>
       <dt>Author</dt><dd>{{ q.author }}</dd>
       <dt>Text</dt><dd>{{ q.text }}</dd>
-      <dt>Published</dt><dd>{{ q.publishedAt }}</dd>
+      <dt>Published</dt><dd>{{ q.publishedAt | date: 'medium' }}</dd>
     </dl>
 
     @if (auth.isAuthenticated()) {

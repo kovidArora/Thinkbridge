@@ -23,11 +23,13 @@ public class QuoteRepository : IQuoteRepository
 public async Task<List<Quote>> GetQuotesAsync(
     int page,
     int size,
+    string? author,
     CancellationToken cancellationToken)
 {
     return await _db.Quotes
         .AsNoTracking()
         .Where(q => !q.IsDeleted)
+        .Where(q => author == null || q.Author == author)
         .OrderBy(q => q.Id)
         .Skip((page - 1) * size)
         .Take(size)
