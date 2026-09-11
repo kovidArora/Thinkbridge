@@ -33,6 +33,12 @@ param autoPauseDelayMinutes int = 60
 @description('Principal id of the API managed identity, granted db_datareader/db_datawriter via AAD auth instead of a connection-string password.')
 param apiPrincipalId string
 
+@description('Subnet to land the private endpoint NIC in — from modules/network.bicep.')
+param privateEndpointSubnetId string
+
+@description('Private DNS zone (privatelink.database.windows.net) the endpoint registers into — from modules/network.bicep.')
+param privateDnsZoneId string
+
 var sqlServerName = 'sql-quotes-${environmentName}-${uniqueString(resourceGroup().id)}'
 var sqlDatabaseName = 'quotes-${environmentName}'
 
@@ -53,14 +59,11 @@ resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
       tenantId: subscription().tenantId
       azureADOnlyAuthentication: false
     }
-  }
-
-  resource allowAzureServices 'firewallRules@2023-08-01-preview' = {
-    name: 'AllowAzureServices'
-    properties: {
-      startIpAddress: '0.0.0.0'
-      endIpAddress: '0.0.0.0'
-    }
+    // No firewall rules to punch holes in, no public IP to reach at all —
+    // the only path in is the private endpoint below. The real app
+    // (hardcoded to SQLite today) never actually queries this server, so
+    // there's nothing running that this could break.
+    publicNetworkAccess: 'Disabled'
   }
 }
 
@@ -89,6 +92,43 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
     // it just pauses until next month instead of billing.
     useFreeLimit: true
     freeLimitExhaustionBehavior: 'AutoPause'
+  }
+}
+
+resource privateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01' = {
+  name: 'pe-${sqlServerName}'
+  location: location
+  properties: {
+    subnet: {
+      id: privateEndpointSubnetId
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'pe-connection-${sqlServerName}'
+        properties: {
+          privateLinkServiceId: sqlServer.id
+          groupIds: ['sqlServer']
+        }
+      }
+    ]
+  }
+}
+
+// Auto-registers the private IP under <sqlServerName>.privatelink.database.windows.net
+// in the shared zone — without this, DNS resolution inside the VNet would
+// still return nothing for the private endpoint's hostname.
+resource privateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
+  parent: privateEndpoint
+  name: 'default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'privatelink-database-windows-net'
+        properties: {
+          privateDnsZoneId: privateDnsZoneId
+        }
+      }
+    ]
   }
 }
 

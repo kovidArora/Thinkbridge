@@ -118,6 +118,14 @@ module api 'modules/api.bicep' = {
   }
 }
 
+module network 'modules/network.bicep' = {
+  name: 'network-${environmentName}'
+  params: {
+    environmentName: environmentName
+    location: location
+  }
+}
+
 module sql 'modules/sql.bicep' = {
   name: 'sql-${environmentName}'
   params: {
@@ -126,6 +134,8 @@ module sql 'modules/sql.bicep' = {
     sqlAdminLogin: sqlAdminLogin
     sqlAdminPassword: sqlAdminPassword
     apiPrincipalId: api.outputs.principalId
+    privateEndpointSubnetId: network.outputs.privateEndpointSubnetId
+    privateDnsZoneId: network.outputs.privateDnsZoneId
   }
 }
 
@@ -147,3 +157,6 @@ output sqlServerFqdn string = sql.outputs.sqlServerFqdn
 
 @description('The Service Bus namespace hostname, empty when deployServiceBus is false.')
 output serviceBusHost string = serviceBus.?outputs.serviceBusNamespaceHost ?? ''
+
+@description('Subnet delegated to Container Instances, for a short-lived in-VNet connectivity check against the SQL private endpoint (not used by anything long-running).')
+output connectivityCheckSubnetId string = network.outputs.connectivityCheckSubnetId

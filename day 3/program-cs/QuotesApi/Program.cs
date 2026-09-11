@@ -18,6 +18,7 @@ using Microsoft.Extensions.Options;
 using QuotesApi;
 using QuotesApi.Options;
 using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.AspNetCore.Rewrite;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -201,6 +202,29 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+// API versioning: /api/v1/* is the versioned surface clients should move
+// to; it rewrites straight onto the existing /api/* routes rather than
+// duplicating every route mapping, so there's no risk of the two drifting
+// apart. /api/* keeps working unchanged for the current frontend and any
+// other existing caller. A real v2 with actually-divergent behavior would
+// get its own explicit route mappings when/if that's ever needed.
+app.UseRewriter(new RewriteOptions()
+    .AddRewrite(@"^api/v1/(.*)$", "api/$1", skipRemainingRules: true));
+
+// Real findings from the OWASP ZAP baseline scan, fixed directly: nosniff
+// stops a browser from MIME-sniffing a JSON response into something
+// executable; the CORP header stops responses from being loaded
+// cross-origin by another site's embedded resources; no-store stops
+// responses — including auth-gated ones — from being cached anywhere
+// along the way, which a JSON API with no static assets never needs.
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("Cross-Origin-Resource-Policy", "same-origin");
+    context.Response.Headers.Append("Cache-Control", "no-store");
+    await next();
+});
 
 app.Use((context, next) =>
 {

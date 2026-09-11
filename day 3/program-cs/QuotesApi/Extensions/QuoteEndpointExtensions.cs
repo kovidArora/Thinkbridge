@@ -17,10 +17,31 @@ namespace QuotesApi.Extensions;
  
 public static class QuoteEndpointExtensions
 {
+    // Applies to every paginated list endpoint below — without an upper
+    // bound, a single caller could request an unbounded result set (e.g.
+    // size=999999999) and force the backend to materialize and serialize
+    // far more data than any real page needs.
+    private const int MaxPageSize = 100;
+
+    private static string[]? ValidatePaging(int page, int size)
+    {
+        if (page < 1)
+        {
+            return ["Page must be greater than 0."];
+        }
+
+        if (size < 1 || size > MaxPageSize)
+        {
+            return [$"Size must be between 1 and {MaxPageSize}."];
+        }
+
+        return null;
+    }
+
     public static void MapQuoteEndpoints(this WebApplication app)
     {
 
- 
+
         app.MapGet("/api/quotes", async (
             int page,
             int size,
@@ -28,19 +49,11 @@ public static class QuoteEndpointExtensions
             IQuoteRepository repository,
             CancellationToken cancellationToken) =>
         {
-            if (page < 1)
+            if (ValidatePaging(page, size) is { } pagingErrors)
             {
                 return Results.ValidationProblem(new Dictionary<string, string[]>
                 {
-                    ["page"] = ["Page must be greater than 0."]
-                });
-            }
-
-            if (size < 1)
-            {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["size"] = ["Size must be greater than 0."]
+                    [size < 1 || size > MaxPageSize ? "size" : "page"] = pagingErrors
                 });
             }
 
@@ -52,20 +65,32 @@ public static class QuoteEndpointExtensions
 
             return Results.Ok(quotes);
         });
- 
+
+        // Exposes author email addresses (see QuoteReadModel) — read access
+        // alone is a real information-disclosure surface, not something to
+        // leave open to anonymous callers the way the plain quotes list is.
         app.MapGet("/api/quotes/with-authors", async (
             int page,
             int size,
             QuoteReadModel readModel,
             CancellationToken cancellationToken) =>
         {
+            if (ValidatePaging(page, size) is { } pagingErrors)
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    [size < 1 || size > MaxPageSize ? "size" : "page"] = pagingErrors
+                });
+            }
+
             var quotes = await readModel.GetQuotesWithAuthorEmailAsync(
                 page,
                 size,
                 cancellationToken);
 
             return Results.Ok(quotes);
-        });
+        })
+        .RequireAuthorization();
 
         app.MapGet("/api/authors/stats", async (
             IQuoteRepository repository,
@@ -85,8 +110,13 @@ public static class QuoteEndpointExtensions
             return Results.Ok(stats);
         });
 
+        // Both debug endpoints were previously callable by anyone, logged in
+        // or not — the evict one is a free, unauthenticated way to force a
+        // cache miss (and the resulting DB query) on demand, a crude but
+        // real denial-of-service lever against the caching layer.
         app.MapGet("/api/debug/author-stats-metrics", (AuthorStatsQueryMetrics metrics) =>
-            Results.Ok(new { dbQueryCount = metrics.DbQueryCount }));
+            Results.Ok(new { dbQueryCount = metrics.DbQueryCount }))
+        .RequireAuthorization();
 
         // Load-test-only: force a cold cache key on demand instead of waiting
         // out the real TTL, so a stampede test starts from a known state.
@@ -94,7 +124,8 @@ public static class QuoteEndpointExtensions
         {
             await cache.RemoveAsync("authors:stats", cancellationToken);
             return Results.NoContent();
-        });
+        })
+        .RequireAuthorization();
 
         app.MapGet("/api/quotes/{id:int}", async (
             int id,
@@ -195,8 +226,9 @@ public static class QuoteEndpointExtensions
             {
                 return Results.BadRequest(ex.Message);
             }
-        });
- 
+        })
+        .RequireAuthorization();
+
         app.MapPost(
             "/api/collections/{id:int}/items/{quoteId:int}",
             async (
@@ -229,10 +261,11 @@ public static class QuoteEndpointExtensions
                 await repository.Update(
                     collection,
                     cancellationToken);
- 
+
                 return Results.Ok(collection);
-            });
- 
+            })
+            .RequireAuthorization();
+
         app.MapDelete(
             "/api/collections/{id:int}/items/{quoteId:int}",
             async (
@@ -265,9 +298,10 @@ public static class QuoteEndpointExtensions
                 await repository.Update(
                     collection,
                     cancellationToken);
- 
+
                 return Results.Ok(collection);
-            });
+            })
+            .RequireAuthorization();
     }
 }
  
