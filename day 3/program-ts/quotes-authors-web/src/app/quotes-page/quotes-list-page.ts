@@ -1,5 +1,5 @@
 import { Component, effect, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Quote } from '../quotes/quote.model';
 import { QuotesService } from '../quotes/quotes.service';
 import { AuthService } from '../create-quote/auth.service';
@@ -17,6 +17,7 @@ const PAGE_SIZE = 20;
 })
 export class QuotesListPageComponent {
   private readonly quotesService = inject(QuotesService);
+  private readonly router = inject(Router);
   protected readonly auth = inject(AuthService);
   protected readonly authorFilter = inject(AuthorFilterService);
 
@@ -45,6 +46,10 @@ export class QuotesListPageComponent {
 
   protected logout(): void {
     this.auth.logout();
+    // Staying on /quotes after logging out would leave a guarded page
+    // showing stale data with no auth behind it until the next navigation
+    // — send the visitor back to the home page immediately instead.
+    this.router.navigateByUrl('/');
   }
 
   protected nextPage(): void {
