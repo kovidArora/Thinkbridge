@@ -112,10 +112,11 @@ public static class QuoteEndpointExtensions
             CreateQuoteRequest request,
             CreateQuoteCommandHandler commandHandler,
             ClaimsPrincipal user,
+            HybridCache cache,
             CancellationToken cancellationToken) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            
+
             if (!int.TryParse(userIdClaim, out var userId))
             {
                 return Results.Unauthorized();
@@ -134,21 +135,34 @@ public static class QuoteEndpointExtensions
                 });
             }
 
+            // Author quote counts changed — without this, the cached
+            // "authors:stats" response would keep serving the pre-creation
+            // count for up to its full 30s TTL.
+            await cache.RemoveAsync("authors:stats", cancellationToken);
+
             return Results.Created(
                 $"/api/quotes/{quote.Id}",
                 quote);
         })
         .RequireAuthorization("can-edit-quotes");
- 
+
         app.MapDelete("/api/quotes/{id:int}", async (
             int id,
             IQuoteRepository repository,
+            HybridCache cache,
             CancellationToken cancellationToken) =>
         {
             var deleted = await repository.DeleteAsync(
                 id,
                 cancellationToken);
- 
+
+            if (deleted)
+            {
+                // Same reasoning as the create path above — a deletion also
+                // changes an author's count.
+                await cache.RemoveAsync("authors:stats", cancellationToken);
+            }
+
             return deleted
                 ? Results.NoContent()
                 : Results.NotFound();

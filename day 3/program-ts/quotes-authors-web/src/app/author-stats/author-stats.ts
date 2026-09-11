@@ -40,7 +40,10 @@ export class AuthorStatsComponent {
     this.minQuotes.set(Number.isFinite(parsed) ? parsed : 0);
   }
 
-  protected reload(): void {
+  // Public: called from quotes-list-page.html's template reference variable
+  // when a new quote is created, not just from this component's own
+  // "Reload" button.
+  reload(): void {
     this.loadAuthorStats();
   }
 

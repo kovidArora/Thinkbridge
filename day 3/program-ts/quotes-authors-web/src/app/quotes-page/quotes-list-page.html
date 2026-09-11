@@ -1,5 +1,5 @@
 @if (auth.isAuthenticated()) {
-  <app-create-quote (created)="loadQuotes()" />
+  <app-create-quote (created)="loadQuotes(); authorStats.reload()" />
 } @else {
   <p class="signed-out-notice">
     <a routerLink="/login">Log in</a> or <a routerLink="/signup">sign up</a> to create a quote.
@@ -51,4 +51,4 @@
 
 <hr />
 
-<app-author-stats />
+<app-author-stats #authorStats />
