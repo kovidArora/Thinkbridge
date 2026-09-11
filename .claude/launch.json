@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "quotes-authors-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start"],
+      "cwd": "day 3/program-ts/quotes-authors-web",
+      "port": 4200
+    }
+  ]
+}

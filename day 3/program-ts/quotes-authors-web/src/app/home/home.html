@@ -1,0 +1,14 @@
+<div class="home">
+  <h1>Quotes &amp; Authors</h1>
+
+  @if (unauthorized()) {
+    <p class="notice" role="alert">You need an account to view quotes — log in or sign up below.</p>
+  }
+
+  <p class="tagline">Sign up or log in to view and edit quotes.</p>
+
+  <div class="actions">
+    <a routerLink="/login" class="button primary">Log in</a>
+    <a routerLink="/signup" class="button">Sign up</a>
+  </div>
+</div>
