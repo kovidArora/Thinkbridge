@@ -6,3 +6,4 @@
 *.db-wal
 day 3/program-cs/QuotesApi-Docs/
 day 3/program-cs/OrderFulfillment/otel-trace-sample.txt
+day 3/program-cs/OrderFulfillment/infra/*.json
