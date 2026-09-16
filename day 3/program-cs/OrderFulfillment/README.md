@@ -153,8 +153,9 @@ else in the solution — the handlers, the dispatcher, and the outbox worker
 - No validation-error handling at the API boundary: an invalid line (e.g.
   negative quantity) throws inside the domain layer and currently
   surfaces as a raw `500` instead of a clean `400`.
-- One failing message in `DispatchOneBatchAsync`'s loop currently stops the
-  rest of that batch rather than isolating the failure per-message.
+- A message that fails every retry has no dead-letter equivalent — it
+  retries forever on every poll instead of eventually being quarantined
+  (per-message failures are now isolated and logged; see ADR-001).
 - Inventory and Shipping have no real persistence — an in-memory repository
   and no repository at all, respectively. Both are explicitly scaffolded
   this way; `Ordering.Infrastructure/EfOrderRepository.cs` is the pattern a

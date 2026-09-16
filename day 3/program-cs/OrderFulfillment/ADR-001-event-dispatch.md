@@ -69,13 +69,21 @@ seam (interface + host-only wiring) rather than a hardcoded shortcut.
 **Given up, and accepted as scaffold limitations:**
 - No real network-hop realism, no independent module scaling, no
   process-level isolation between "API" and "worker" — they're one process.
-- No dead-lettering. A message a real broker would retry-then-quarantine
-  instead crashes the whole loop here (see the critique below).
+- No dead-lettering yet. A message that fails every attempt now retries
+  forever on every poll instead of being quarantined after N attempts —
+  see the critique below and the follow-up this closed.
 - No competing consumers across separate processes — the dispatcher is
   single-threaded per poll.
 
-**Follow-up work this trade-off implies, not yet done:** wrap
-`DispatchOneBatchAsync`'s per-message dispatch in its own error boundary,
-so one bad message degrades (retry / mark failed / dead-letter-equivalent
-row) instead of crashing the entire host — see the critique section below,
-this was the sharpest gap surfaced by outside review.
+**Follow-up work this trade-off implied — closed:** `DispatchOneBatchAsync`
+now wraps each message's dispatch in its own `try/catch` (PR:
+`fix/outbox-per-message-error-isolation`). One bad message is logged and
+left unprocessed for retry on the next poll, instead of propagating out of
+`ExecuteAsync` and taking down the whole host — this was the sharpest gap
+surfaced by outside review, described below.
+
+**Still open, deliberately out of scope for that PR:** no dead-letter
+equivalent yet, so a message that can *never* succeed retries forever
+rather than eventually being quarantined. Needs a delivery-attempt counter
+on `OutboxMessage` and a policy for what happens past the limit — real
+follow-up work, not solved here.

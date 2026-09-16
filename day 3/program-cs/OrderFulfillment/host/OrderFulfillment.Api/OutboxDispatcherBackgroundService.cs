@@ -93,11 +93,33 @@ public class OutboxDispatcherBackgroundService(
             // end-to-end trace in Application Insights.
             using var activity = StartDispatchActivity(message);
 
-            var @event = (IntegrationEvent)JsonSerializer.Deserialize(message.Payload, eventType)!;
-            await dispatcher.PublishAsync(@event, cancellationToken);
+            try
+            {
+                var @event = (IntegrationEvent)JsonSerializer.Deserialize(message.Payload, eventType)!;
+                await dispatcher.PublishAsync(@event, cancellationToken);
 
-            message.MarkProcessed();
-            await db.SaveChangesAsync(cancellationToken);
+                message.MarkProcessed();
+                await db.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Isolate this one message's failure. Without this, an
+                // unhandled exception here propagates out of ExecuteAsync,
+                // and since .NET 6 the default BackgroundServiceException
+                // Behavior is StopHost -- one bad message would otherwise
+                // crash the entire application, not just skip itself.
+                // Left unprocessed on purpose: the next poll retries it,
+                // same at-least-once semantics as a real broker's
+                // redelivery. A message that can never succeed will retry
+                // forever with no dead-letter equivalent yet -- that's
+                // real follow-up work, not solved by this change.
+                logger.LogError(
+                    ex,
+                    "Failed to dispatch outbox message {MessageId} ({Type}); will retry on next poll",
+                    message.Id,
+                    message.Type);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            }
         }
 
         return pending.Count;
