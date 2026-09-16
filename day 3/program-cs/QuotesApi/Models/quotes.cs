@@ -12,14 +12,15 @@ public class Quote
     private Quote() { } // EF Core
 
     private Quote(string author, string text, int createdByUserId)
-    {
+    {   
         Author = author;
         Text = text;
         CreatedByUserId = createdByUserId;
     }
 
     public static (Quote? Quote, string? Error) Create(string author, string text, int createdByUserId)
-    {
+    {   
+        author= author.Trim();
         if (string.IsNullOrWhiteSpace(text) || text.Length > 1000)
         {
             return (null, "Text must be between 1 and 1000 characters.");

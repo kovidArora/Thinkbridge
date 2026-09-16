@@ -24,6 +24,8 @@ public class OutboxMessage
 
     private OutboxMessage() { }
 
+    // turns a real event object into a row: class name as text, event as
+    // json, plus whatever trace was running right now (for tracing later)
     public static OutboxMessage From(IntegrationEvent @event) => new()
     {
         Id = @event.Id,

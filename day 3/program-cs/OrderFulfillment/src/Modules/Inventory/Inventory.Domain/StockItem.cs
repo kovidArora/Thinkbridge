@@ -19,6 +19,7 @@ public class StockItem : AggregateRoot
         QuantityOnHand = quantityOnHand,
     };
 
+    // not enough left -> fail, don't touch anything. enough -> reserve it
     public bool TryReserve(int quantity)
     {
         if (quantity > QuantityAvailable)

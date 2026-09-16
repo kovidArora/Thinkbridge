@@ -16,6 +16,8 @@ public class Order : AggregateRoot
 
     private Order() { }
 
+    // build the order, mark it Placed, queue an OrderPlaced event to go out
+    // when this gets saved (see AggregateRoot.Raise / OutboxMessage.From)
     public static Order Place(Guid customerId, IEnumerable<OrderLine> lines)
     {
         var lineList = lines.ToList();
@@ -36,6 +38,7 @@ public class Order : AggregateRoot
         return order;
     }
 
+    // only legal from Placed -> Confirmed, otherwise throw
     /// Called when Inventory's async reply says stock was reserved.
     public void Confirm()
     {
@@ -48,6 +51,7 @@ public class Order : AggregateRoot
         Raise(new OrderConfirmed(Id));
     }
 
+    // can't cancel something already Fulfilled or already Cancelled
     /// Called when Inventory's async reply says stock could NOT be reserved,
     /// or a customer/operator cancels before fulfillment.
     public void Cancel(string reason)
@@ -61,6 +65,7 @@ public class Order : AggregateRoot
         Raise(new OrderCancelled(Id, reason));
     }
 
+    // only legal from Confirmed -> Fulfilled
     /// Called when Shipping's async reply says the shipment was created.
     public void MarkFulfilled()
     {

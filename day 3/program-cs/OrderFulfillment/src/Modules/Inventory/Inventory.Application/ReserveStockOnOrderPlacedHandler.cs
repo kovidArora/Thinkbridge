@@ -11,6 +11,9 @@ public class ReserveStockOnOrderPlacedHandler(
     IStockItemRepository repository,
     IIntegrationEventPublisher publisher)
 {
+    // check every line's stock. sku missing or not enough left -> publish
+    // StockReservationFailed and bail immediately. all lines ok -> publish
+    // StockReserved once, after the loop
     public async Task HandleAsync(OrderPlaced orderPlaced, CancellationToken cancellationToken)
     {
         foreach (var line in orderPlaced.Lines)

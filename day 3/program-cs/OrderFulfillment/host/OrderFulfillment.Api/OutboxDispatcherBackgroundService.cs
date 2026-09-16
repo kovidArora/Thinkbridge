@@ -23,6 +23,8 @@ public class OutboxDispatcherBackgroundService(
     // the way an HTTP request does, so spans have to be started explicitly.
     public static readonly ActivitySource ActivitySource = new("OrderFulfillment.Worker");
 
+    // maps the event's name-as-text (what's stored in the db) back to its
+    // real C# class, so json can be turned back into an actual object
     private static readonly Dictionary<string, Type> EventTypesByName = new()
     {
         [nameof(OrderPlaced)] = typeof(OrderPlaced),
@@ -31,6 +33,9 @@ public class OutboxDispatcherBackgroundService(
         [nameof(OrderFulfilled)] = typeof(OrderFulfilled),
     };
 
+    // run dispatchpending 
+    //wait 200 ms
+    //repeat until cancelled
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -40,6 +45,9 @@ public class OutboxDispatcherBackgroundService(
         }
     }
 
+    // keep draining one batch at a time — dispatching one event can create a
+    // brand new outbox row (e.g. OrderPlaced -> StockReserved), so one pass
+    // isn't enough to clear a whole chain in one go
     public async Task DispatchPendingAsync(CancellationToken cancellationToken)
     {
         // Loops because dispatching one event (e.g. OrderPlaced -> Ordering
@@ -51,6 +59,9 @@ public class OutboxDispatcherBackgroundService(
         }
     }
 
+    // grab every unprocessed outbox row, oldest first, and for each one:
+    // find its real type, start a span, turn the json back into a real
+    // event object, dispatch it, then mark it processed
     private async Task<int> DispatchOneBatchAsync(CancellationToken cancellationToken)
     {
         using var scope = services.CreateScope();
@@ -66,6 +77,8 @@ public class OutboxDispatcherBackgroundService(
 
         foreach (var message in pending)
         {
+            // message.Type is just text ("OrderPlaced") — look up the real
+            // class behind that name so Deserialize knows what to build
             if (!EventTypesByName.TryGetValue(message.Type, out var eventType))
             {
                 logger.LogWarning("No known event type for outbox message {Type}", message.Type);
@@ -75,7 +88,8 @@ public class OutboxDispatcherBackgroundService(
             // Resumes the trace the original HTTP request started (see
             // OutboxMessage.TraceParent) instead of starting an unrelated
             // one — this span, and every DB/dependency call nested under it
-            // via dispatcher.PublishAsync, shows up as part of that same
+            // via dispatcher.
+            // Async, shows up as part of that same
             // end-to-end trace in Application Insights.
             using var activity = StartDispatchActivity(message);
 
@@ -89,6 +103,9 @@ public class OutboxDispatcherBackgroundService(
         return pending.Count;
     }
 
+    // if this row has a saved traceparent, resume that trace instead of
+    // starting a new unrelated one — this is what links a request's span to
+    // this later, async span in the same trace
     private static Activity? StartDispatchActivity(OutboxMessage message)
     {
         var parentContext = !string.IsNullOrEmpty(message.TraceParent)

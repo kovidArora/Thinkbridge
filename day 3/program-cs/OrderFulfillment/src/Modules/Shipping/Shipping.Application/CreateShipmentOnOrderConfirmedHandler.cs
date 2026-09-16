@@ -11,6 +11,8 @@ namespace Shipping.Application;
 /// Ordering.Infrastructure.
 public class CreateShipmentOnOrderConfirmedHandler(IIntegrationEventPublisher publisher)
 {
+    // runs when an order is confirmed: create a shipment, then publish
+    // whatever events that raised (ShipmentCreated) — no db here, scaffold only
     public async Task HandleAsync(OrderConfirmed orderConfirmed, CancellationToken cancellationToken)
     {
         var shipment = Shipment.CreateFor(orderConfirmed.OrderId);

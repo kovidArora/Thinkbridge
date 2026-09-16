@@ -14,6 +14,8 @@
       <dt>Published</dt><dd>{{ q.publishedAt | date: 'medium' }}</dd>
     </dl>
 
+    <button type="button" class="no-print" (click)="printQuote()">Print quote</button>
+
     @if (auth.isAuthenticated()) {
       <button type="button" (click)="deleteQuote()" [disabled]="deleting()">
         {{ deleting() ? 'Deleting…' : 'Delete quote' }}

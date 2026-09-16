@@ -33,6 +33,9 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
         modelBuilder.Entity<OutboxMessage>(b => b.HasKey(m => m.Id));
     }
 
+    // before every real save: find any tracked aggregate holding pending
+    // events, turn each into an outbox row, clear them, THEN save everything
+    // together — this is the line that makes the outbox pattern actually work
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         // Same guarantee as OutboxPattern-Demo: every pending event on every

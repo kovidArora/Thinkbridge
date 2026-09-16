@@ -7,6 +7,8 @@ namespace Notifications.Application;
 /// No aggregate, no persistence — this module has no state of its own,
 /// it only reacts. Scaffold only: a real implementation sends an actual
 /// email/SMS here instead of logging.
+// one method per event type this module cares about — just logs, would
+// really send an email/sms
 public class NotificationHandlers(ILogger<NotificationHandlers> logger)
 {
     public Task HandleAsync(OrderConfirmed orderConfirmed, CancellationToken cancellationToken)

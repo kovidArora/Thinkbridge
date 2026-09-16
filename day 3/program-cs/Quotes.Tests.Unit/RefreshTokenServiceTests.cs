@@ -28,7 +28,7 @@ public class RefreshTokenServiceTests
         var snapshot = Substitute.For<IOptionsSnapshot<JwtOptions>>();
         snapshot.Value.Returns(new JwtOptions
         {
-            RefreshTokenLifetime = TimeSpan.FromDays(30)
+            RefreshTokenLifetime = TimeSpan.FromHours(1)
         });
         return snapshot;
     }

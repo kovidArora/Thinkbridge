@@ -12,3 +12,13 @@
 .error {
   color: #b00020;
 }
+
+/* Only the quote's own details (the <dl>) should show up on a printed page —
+   navigation and action buttons are useless on paper. */
+@media print {
+  .no-print,
+  .back-link,
+  button {
+    display: none;
+  }
+}

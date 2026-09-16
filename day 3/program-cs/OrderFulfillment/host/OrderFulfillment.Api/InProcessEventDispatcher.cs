@@ -18,6 +18,9 @@ namespace OrderFulfillment.Api;
 /// but the routing logic itself doesn't change either way.
 public class InProcessEventDispatcher(IServiceProvider services) : IIntegrationEventPublisher
 {
+    // look at what kind of event this is, call whichever handler(s) care
+    // about it. this switch is the only place in the whole solution that
+    // knows every module's handlers at once
     public async Task PublishAsync(IntegrationEvent @event, CancellationToken cancellationToken)
     {
         using var scope = services.CreateScope();

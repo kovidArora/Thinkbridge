@@ -17,6 +17,8 @@ public abstract class AggregateRoot
     [NotMapped]
     public IReadOnlyList<IntegrationEvent> PendingEvents => _pendingEvents;
 
+    // just queues the event in memory — doesn't save/publish anything yet,
+    // that happens later in SaveChangesAsync
     protected void Raise(IntegrationEvent @event) => _pendingEvents.Add(@event);
 
     /// Called by infrastructure right after SaveChanges writes these events

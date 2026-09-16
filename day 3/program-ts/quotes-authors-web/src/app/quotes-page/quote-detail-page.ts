@@ -44,6 +44,10 @@ export class QuoteDetailPageComponent {
     { initialValue: null as Quote | null }
   );
 
+  protected printQuote(): void {
+    window.print();
+  }
+
   protected deleteQuote(): void {
     const q = this.quote();
     if (!q || !confirm(`Delete quote #${q.id} by ${q.author}? This can't be undone.`)) {
