@@ -4,6 +4,25 @@ using System.Text.Json;
 var baseUrl = "http://localhost:5090";
 using var http = new HttpClient(new SocketsHttpHandler { MaxConnectionsPerServer = 500 });
 
+// /api/debug/* now requires auth (see QuoteEndpointExtensions.cs) -- it used
+// to be a free, unauthenticated cache-eviction DoS lever, closed during the
+// OpenAPI hardening pass. GET /api/authors/stats itself is still anonymous,
+// so only these two debug calls need the token.
+async Task AuthenticateAsync()
+{
+    var email = $"loadtest-{Guid.NewGuid():N}@example.com";
+    var response = await http.PostAsJsonAsync($"{baseUrl}/api/auth/register", new
+    {
+        email,
+        password = "LoadTestPassword123!",
+    });
+    response.EnsureSuccessStatusCode();
+
+    var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+    var token = body.GetProperty("access_token").GetString();
+    http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+}
+
 async Task<long> GetDbQueryCountAsync()
 {
     var body = await http.GetFromJsonAsync<JsonElement>($"{baseUrl}/api/debug/author-stats-metrics");
@@ -42,6 +61,8 @@ async Task RunBurstAsync(string label, int concurrency, bool noCache)
     Console.WriteLine($"  DB queries fired: {after - before}  (before={before}, after={after})");
     Console.WriteLine();
 }
+
+await AuthenticateAsync();
 
 Console.WriteLine("=== Baseline: no cache, 50 concurrent requests (every request hits the DB) ===");
 await RunBurstAsync("no-cache burst", concurrency: 50, noCache: true);

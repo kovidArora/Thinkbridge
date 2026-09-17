@@ -9,6 +9,21 @@ defaults:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Some integration tests (author-stats cache eviction) go through
+    # HybridCache's real L2 store -- without this service they fail with
+    # RedisConnectionException, not a real test/code bug. Program.cs already
+    # defaults Redis:ConnectionString to localhost:6379 when unset, which is
+    # exactly where a GitHub Actions service container is reachable from.
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -3,4 +3,5 @@
   <Project Path="../Quotes.Tests.Unit/Quotes.Tests.Unit.csproj" />
   <Project Path="QuotesApi.csproj" />
   <Project Path="../QuotesApi.Tests.Integration/QuotesApi.Tests.Integration.csproj" />
+  <Project Path="../QuotesApi.Tests.E2E/QuotesApi.Tests.E2E.csproj" />
 </Solution>
