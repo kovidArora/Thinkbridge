@@ -19,13 +19,13 @@ public class Quote
     }
 
     public static (Quote? Quote, string? Error) Create(string author, string text, int createdByUserId)
-    {   
-        author= author.Trim();
+    {
         if (string.IsNullOrWhiteSpace(text) || text.Length > 1000)
         {
             return (null, "Text must be between 1 and 1000 characters.");
         }
 
+        author = author?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(author) || author.Length > 200)
         {
             return (null, "Author must be between 1 and 200 characters.");
